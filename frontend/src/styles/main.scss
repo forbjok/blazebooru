@@ -1,0 +1,88 @@
+@import url(https://fonts.googleapis.com/css?family=Roboto);
+
+main {
+  background-color: var(--color-default-background);
+  color: var(--color-default-text);
+
+  font-family: "Roboto", sans-serif;
+  font-size: 1rem;
+
+  min-width: 100vw;
+  min-height: 100vh;
+}
+
+a {
+  color: var(--color-link);
+  text-decoration: none;
+
+  &:hover {
+    color: var(--color-link-hover);
+  }
+}
+
+button {
+  display: inline-block;
+
+  background-color: rgb(240, 240, 240);
+  border: 1px solid black;
+  border-style: outset;
+
+  padding: 0.2rem 0.4rem;
+
+  cursor: default !important;
+
+  &:hover {
+    background-color: rgb(230, 230, 230);
+  }
+}
+
+input[type="file"] {
+  padding: 1px;
+
+  &::file-selector-button {
+    color: black;
+  }
+}
+
+input[type="submit"] {
+  background-color: buttonface;
+  color: buttontext;
+  border: 1px outset buttonborder;
+  border-radius: 3px;
+  padding: 0.2rem 0.4rem;
+
+  cursor: default;
+
+  &:hover {
+    filter: brightness(0.98);
+  }
+}
+
+input[type="text"] {
+  background-color: white;
+  border: 1px solid black;
+  padding: 0.2rem;
+}
+
+input[type="password"] {
+  background-color: white;
+  border: 1px solid black;
+  padding: 0.4rem;
+}
+
+hr {
+  margin: 0.5rem 0;
+}
+
+select {
+  appearance: auto;
+  background-color: white;
+  border: 1px solid black;
+  padding: 0.2rem;
+}
+
+textarea {
+  background-color: white;
+  border: 1px solid black;
+  padding: 0.2rem;
+}

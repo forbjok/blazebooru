@@ -1,0 +1,12 @@
+[package]
+name = "blazebooru_models"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+chrono = { version = "0.4.22", features = ["serde"] }
+serde = "1.0.145"
+serde_derive = "1.0.145"
+uuid = "1.2.0"

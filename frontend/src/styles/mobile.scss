@@ -1,0 +1,12 @@
+// If desktop, hide all mobile-specific elements
+@media not screen and (max-width: 480px) {
+  .mobile {
+    display: none !important;
+  }
+}
+
+@media only screen and (max-width: 480px) {
+  .desktop {
+    display: none !important;
+  }
+}
