@@ -4,6 +4,7 @@ use anyhow::{anyhow, Context};
 use axum::extract::ContentLengthLimit;
 use axum::extract::Multipart;
 use axum::extract::Path;
+use axum::extract::Query;
 use axum::extract::State;
 use axum::routing::get;
 use axum::routing::post;
@@ -27,10 +28,17 @@ struct PostInfo {
     description: Option<String>,
 }
 
+#[derive(Deserialize)]
+struct PostsQuery {
+    offset: i32,
+    limit: i32,
+}
+
 pub fn router(server: Arc<BlazeBooruServer>) -> Router<Arc<BlazeBooruServer>> {
     Router::with_state(server)
         .route("/", get(get_view_posts))
         .route("/:id", get(get_view_post))
+        .route("/stats", get(get_posts_stats))
         .route("/upload", post(upload_post))
 }
 
@@ -51,14 +59,28 @@ async fn get_view_post(
 #[axum::debug_handler(state = Arc<BlazeBooruServer>)]
 async fn get_view_posts(
     State(server): State<Arc<BlazeBooruServer>>,
+    Query(PostsQuery { offset, limit }): Query<PostsQuery>,
 ) -> Result<Json<Vec<vm::Post>>, ApiError> {
     let posts = server
         .core
-        .get_view_posts()
+        .get_view_posts(offset, limit)
         .await
         .context("Error getting thread")?;
 
     Ok(Json(posts))
+}
+
+#[axum::debug_handler(state = Arc<BlazeBooruServer>)]
+async fn get_posts_stats(
+    State(server): State<Arc<BlazeBooruServer>>,
+) -> Result<Json<vm::PaginationStats>, ApiError> {
+    let stats = server
+        .core
+        .get_posts_pagination_stats()
+        .await
+        .context("Error getting posts pagination stats")?;
+
+    Ok(Json(stats))
 }
 
 #[axum::debug_handler(state = Arc<BlazeBooruServer>)]

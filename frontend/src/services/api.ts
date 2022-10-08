@@ -1,6 +1,6 @@
 import axios from "axios";
 
-import type { Post, PostInfo } from "@/models/api/post";
+import type { PaginationStats, Post, PostInfo } from "@/models/api/post";
 import type { BlazeBooruAuthService } from "./auth";
 
 export class BlazeBooruApiService {
@@ -16,9 +16,24 @@ export class BlazeBooruApiService {
     }
   }
 
-  async get_posts() {
+  async get_posts(offset: number, limit: number) {
     try {
-      const res = await axios.get<Post[]>("/api/post");
+      const res = await axios.get<Post[]>("/api/post", {
+        params: {
+          offset,
+          limit,
+        },
+      });
+
+      return res.data;
+    } catch {
+      return;
+    }
+  }
+
+  async get_posts_pagination_stats() {
+    try {
+      const res = await axios.get<PaginationStats>("/api/post/stats");
 
       return res.data;
     } catch {

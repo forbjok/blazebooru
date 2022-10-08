@@ -73,15 +73,25 @@ impl BlazeBooruCore {
         Ok(post)
     }
 
-    pub async fn get_view_posts(&self) -> Result<Vec<vm::Post>, anyhow::Error> {
+    pub async fn get_view_posts(
+        &self,
+        offset: i32,
+        limit: i32,
+    ) -> Result<Vec<vm::Post>, anyhow::Error> {
         let posts = self
             .store
-            .get_view_posts()
+            .get_view_posts(offset, limit)
             .await?
             .into_iter()
             .map(vm::Post::from)
             .collect();
 
         Ok(posts)
+    }
+
+    pub async fn get_posts_pagination_stats(&self) -> Result<vm::PaginationStats, anyhow::Error> {
+        let stats = self.store.get_posts_pagination_stats().await?;
+
+        Ok(stats)
     }
 }

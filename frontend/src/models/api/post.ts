@@ -17,3 +17,8 @@ export interface PostInfo {
   title?: string;
   description?: string;
 }
+
+export interface PaginationStats {
+  max_id: number;
+  count: number;
+}

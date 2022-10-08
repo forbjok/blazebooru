@@ -23,3 +23,9 @@ pub struct User {
     pub created_at: DateTime<Utc>,
     pub name: String,
 }
+
+#[derive(Debug, Serialize)]
+pub struct PaginationStats {
+    pub max_id: i32,
+    pub count: i32,
+}
