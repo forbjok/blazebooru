@@ -15,7 +15,7 @@ const path = inject<PathService>("path")!;
 
 <template>
   <div class="posts">
-    <a v-for="p in posts" :key="p.id" :href="`/post/${p.id}`" class="post">
+    <a v-for="p in posts" :key="p.id" :href="`/post/${p.id}`" :title="p.title" class="post">
       <img :src="path.make_thumbnail_path(p)" />
     </a>
   </div>
