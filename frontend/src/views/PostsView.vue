@@ -91,16 +91,25 @@ const loadPage = async (page: number) => {
 </template>
 
 <style scoped lang="scss">
+main {
+  padding-bottom: 3rem;
+}
+
 .pages {
   position: fixed;
-  left: 0;
+  left: 50%;
   bottom: 1rem;
-  right: 0;
 
   display: flex;
   flex-direction: row;
-  justify-content: center;
+  align-items: center;
   gap: 0.4rem;
+
+  background-color: var(--color-pages-background);
+
+  padding: 0.2rem;
+
+  transform: translateX(-50%);
 
   button {
     background: none;
