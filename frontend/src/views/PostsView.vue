@@ -56,7 +56,7 @@ onMounted(async () => {
 });
 
 const loadPosts = async (offset: number) => {
-  const _posts = await api.get_posts(offset, POSTS_PER_PAGE);
+  const _posts = await api.search_posts([], [], offset, POSTS_PER_PAGE);
   posts.value = _posts;
 };
 

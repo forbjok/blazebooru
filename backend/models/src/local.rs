@@ -42,6 +42,7 @@ pub struct NewPost<'a> {
     pub description: Option<Cow<'a, str>>,
     pub filename: Cow<'a, str>,
     pub file: HashedFile,
+    pub tags: Vec<&'a str>,
 }
 
 #[derive(Debug)]

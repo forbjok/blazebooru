@@ -13,11 +13,20 @@ impl PgStore {
         Ok(post)
     }
 
-    pub async fn create_post(&self, post: &dbm::NewPost) -> Result<dbm::Post, StoreError> {
-        let post = sqlx::query_as_unchecked!(dbm::Post, r#"SELECT * FROM create_post($1);"#, post)
-            .fetch_one(&self.pool)
-            .await
-            .context("Error creating post in database")?;
+    pub async fn create_post(
+        &self,
+        post: &dbm::NewPost,
+        tags: &[&str],
+    ) -> Result<dbm::Post, StoreError> {
+        let post = sqlx::query_as_unchecked!(
+            dbm::Post,
+            r#"SELECT * FROM create_post($1, $2);"#,
+            post,
+            tags
+        )
+        .fetch_one(&self.pool)
+        .await
+        .context("Error creating post in database")?;
 
         Ok(post)
     }
@@ -35,14 +44,18 @@ impl PgStore {
         Ok(post)
     }
 
-    pub async fn get_view_posts(
+    pub async fn search_view_posts(
         &self,
+        include_tags: &[&str],
+        exclude_tags: &[&str],
         offset: i32,
         limit: i32,
     ) -> Result<Vec<dbm::ViewPost>, StoreError> {
         let posts = sqlx::query_as_unchecked!(
             dbm::ViewPost,
-            r#"SELECT * FROM view_post ORDER BY id DESC LIMIT $1 OFFSET $2;"#,
+            r#"SELECT * FROM search_view_posts($1, $2) ORDER BY id DESC LIMIT $3 OFFSET $4;"#,
+            include_tags,
+            exclude_tags,
             limit,
             offset
         )

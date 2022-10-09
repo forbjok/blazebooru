@@ -16,10 +16,12 @@ export class BlazeBooruApiService {
     }
   }
 
-  async get_posts(offset: number, limit: number) {
+  async search_posts(include_tags: string[], exclude_tags: string[], offset: number, limit: number) {
     try {
-      const res = await axios.get<Post[]>("/api/post", {
+      const res = await axios.get<Post[]>("/api/post/search", {
         params: {
+          t: include_tags,
+          e: exclude_tags,
           offset,
           limit,
         },

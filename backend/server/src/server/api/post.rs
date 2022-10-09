@@ -26,18 +26,30 @@ const MAX_IMAGE_SIZE: u64 = 10_000_000; // 10MB
 struct PostInfo {
     title: Option<String>,
     description: Option<String>,
+
+    #[serde(default)]
+    tags: Vec<String>,
 }
 
 #[derive(Deserialize)]
 struct PostsQuery {
+    #[serde(rename = "t")]
+    #[serde(default)]
+    #[serde(deserialize_with = "crate::deserialize::comma_separated")]
+    include_tags: Vec<String>,
+    #[serde(rename = "e")]
+    #[serde(default)]
+    #[serde(deserialize_with = "crate::deserialize::comma_separated")]
+    exclude_tags: Vec<String>,
+
     offset: i32,
     limit: i32,
 }
 
 pub fn router(server: Arc<BlazeBooruServer>) -> Router<Arc<BlazeBooruServer>> {
     Router::with_state(server)
-        .route("/", get(get_view_posts))
         .route("/:id", get(get_view_post))
+        .route("/search", get(search_view_posts))
         .route("/stats", get(get_posts_stats))
         .route("/upload", post(upload_post))
 }
@@ -57,13 +69,21 @@ async fn get_view_post(
 }
 
 #[axum::debug_handler(state = Arc<BlazeBooruServer>)]
-async fn get_view_posts(
+async fn search_view_posts(
     State(server): State<Arc<BlazeBooruServer>>,
-    Query(PostsQuery { offset, limit }): Query<PostsQuery>,
+    Query(PostsQuery {
+        include_tags,
+        exclude_tags,
+        offset,
+        limit,
+    }): Query<PostsQuery>,
 ) -> Result<Json<Vec<vm::Post>>, ApiError> {
+    let include_tags = include_tags.iter().map(|t| t.as_str()).collect();
+    let exclude_tags = exclude_tags.iter().map(|t| t.as_str()).collect();
+
     let posts = server
         .core
-        .get_view_posts(offset, limit)
+        .search_view_posts(include_tags, exclude_tags, offset, limit)
         .await
         .context("Error getting thread")?;
 
@@ -129,6 +149,7 @@ async fn upload_post(
             description: info.description.map(|s| s.into()),
             filename: filename.into(),
             file,
+            tags: info.tags.iter().map(|t| t.as_str()).collect(),
         };
 
         let new_post_id = server
