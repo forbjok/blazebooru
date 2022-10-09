@@ -134,6 +134,39 @@ SELECT
 FROM post AS p
 JOIN "user" AS u ON u.id = p.user_id;
 
+-- Create filter_tags function
+CREATE OR REPLACE FUNCTION filter_tags(
+  IN p_tags text[]
+)
+RETURNS text[]
+LANGUAGE plpgsql
+
+AS $BODY$
+BEGIN
+  RETURN (SELECT COALESCE(array_agg(tag), '{}') FROM tag WHERE tag = ANY(p_tags));
+END;
+$BODY$;
+
+-- Create validate_tags function
+CREATE OR REPLACE FUNCTION validate_tags(
+  INOUT p_include_tags text[],
+  INOUT p_exclude_tags text[],
+  OUT p_valid boolean
+)
+LANGUAGE plpgsql
+
+AS $BODY$
+DECLARE
+  v_include_tags text[];
+BEGIN
+  v_include_tags := filter_tags(p_include_tags);
+  p_exclude_tags := filter_tags(p_exclude_tags);
+
+  p_valid := NOT (cardinality(v_include_tags) < cardinality(p_include_tags) OR v_include_tags && p_exclude_tags);
+  p_include_tags := v_include_tags;
+END;
+$BODY$;
+
 -- Update search_view_posts function
 DROP FUNCTION search_view_posts;
 CREATE OR REPLACE FUNCTION search_view_posts(
@@ -143,19 +176,29 @@ CREATE OR REPLACE FUNCTION search_view_posts(
   IN p_limit integer
 )
 RETURNS SETOF view_post
-LANGUAGE sql
+LANGUAGE plpgsql
 
 AS $BODY$
-SELECT *
-FROM view_post
-WHERE
-  -- Post must have all the included tags
-  tags @> p_include_tags
-  -- Post must not have any of the excluded tags
-  AND NOT tags && p_exclude_tags
-ORDER BY id DESC
-LIMIT p_limit
-OFFSET p_offset;
+DECLARE
+  v_valid boolean;
+BEGIN
+  SELECT * INTO p_include_tags, p_exclude_tags, v_valid FROM validate_tags(p_include_tags, p_exclude_tags);
+  IF NOT v_valid THEN
+    RETURN QUERY SELECT * FROM view_post LIMIT 0;
+  END IF;
+
+  RETURN QUERY
+  SELECT *
+  FROM view_post
+  WHERE
+    -- Post must have all the included tags
+    tags @> p_include_tags
+    -- Post must not have any of the excluded tags
+    AND NOT tags && p_exclude_tags
+  ORDER BY id DESC
+  LIMIT p_limit
+  OFFSET p_offset;
+END;
 $BODY$;
 
 -- Create search_view_posts_stats function
@@ -164,14 +207,29 @@ CREATE OR REPLACE FUNCTION search_view_posts_count(
   IN p_exclude_tags text[]
 )
 RETURNS integer
-LANGUAGE sql
+LANGUAGE plpgsql
 
 AS $BODY$
-SELECT COALESCE(COUNT(*)::integer, 0)
-FROM view_post
-WHERE
-  -- Post must have all the included tags
-  tags @> p_include_tags
-  -- Post must not have any of the excluded tags
-  AND NOT tags && p_exclude_tags;
+DECLARE
+  v_valid boolean;
+BEGIN
+  SELECT * INTO p_include_tags, p_exclude_tags, v_valid FROM validate_tags(p_include_tags, p_exclude_tags);
+  IF NOT v_valid THEN
+    RETURN 0;
+  END IF;
+
+  IF cardinality(p_include_tags) = 0 AND cardinality(p_exclude_tags) = 0 THEN
+    RETURN (SELECT reltuples FROM pg_class where relname = 'post');
+  END IF;
+
+  RETURN (
+    SELECT COALESCE(COUNT(*)::integer, 0)
+    FROM view_post
+    WHERE
+      -- Post must have all the included tags
+      tags @> p_include_tags
+      -- Post must not have any of the excluded tags
+      AND NOT tags && p_exclude_tags
+  );
+END;
 $BODY$;
