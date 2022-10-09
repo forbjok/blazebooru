@@ -36,6 +36,22 @@ button {
   &:hover {
     background-color: rgb(230, 230, 230);
   }
+
+  &.link-button {
+    background: none;
+    border: none;
+    color: var(--color-link);
+
+    padding: 0;
+
+    &:enabled {
+      cursor: pointer !important;
+    }
+
+    &:hover {
+      color: var(--color-link-hover);
+    }
+  }
 }
 
 input[type="file"] {
@@ -60,16 +76,11 @@ input[type="submit"] {
   }
 }
 
-input[type="text"] {
-  background-color: white;
-  border: 1px solid black;
-  padding: 0.2rem;
-}
-
+input[type="text"],
 input[type="password"] {
   background-color: white;
   border: 1px solid black;
-  padding: 0.4rem;
+  padding: 0.2rem;
 }
 
 hr {

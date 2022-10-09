@@ -15,6 +15,7 @@ pub struct Post {
     pub hash: String,
     pub ext: String,
     pub tn_ext: String,
+    pub tags: Vec<String>,
 }
 
 #[derive(Debug, Serialize)]

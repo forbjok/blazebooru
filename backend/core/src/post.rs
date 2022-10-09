@@ -49,7 +49,7 @@ impl BlazeBooruCore {
                 .context("Error saving thumbnail")?;
         }
 
-        let post = dbm::NewPost {
+        let db_post = dbm::NewPost {
             user_id: Some(post.user_id),
             title: post.title.map(|s| s.to_string()),
             description: post.description.map(|s| s.to_string()),
@@ -62,7 +62,7 @@ impl BlazeBooruCore {
             tn_ext: Some(tn_ext.into()),
         };
 
-        let post = self.store.create_post(&post).await?;
+        let post = self.store.create_post(&db_post, &post.tags).await?;
 
         Ok(post.id.unwrap())
     }
@@ -73,14 +73,16 @@ impl BlazeBooruCore {
         Ok(post)
     }
 
-    pub async fn get_view_posts(
+    pub async fn search_view_posts(
         &self,
+        include_tags: Vec<&str>,
+        exclude_tags: Vec<&str>,
         offset: i32,
         limit: i32,
     ) -> Result<Vec<vm::Post>, anyhow::Error> {
         let posts = self
             .store
-            .get_view_posts(offset, limit)
+            .search_view_posts(&include_tags, &exclude_tags, offset, limit)
             .await?
             .into_iter()
             .map(vm::Post::from)
@@ -89,8 +91,15 @@ impl BlazeBooruCore {
         Ok(posts)
     }
 
-    pub async fn get_posts_pagination_stats(&self) -> Result<vm::PaginationStats, anyhow::Error> {
-        let stats = self.store.get_posts_pagination_stats().await?;
+    pub async fn get_posts_pagination_stats(
+        &self,
+        include_tags: Vec<&str>,
+        exclude_tags: Vec<&str>,
+    ) -> Result<vm::PaginationStats, anyhow::Error> {
+        let stats = self
+            .store
+            .get_posts_pagination_stats(&include_tags, &exclude_tags)
+            .await?;
 
         Ok(stats)
     }

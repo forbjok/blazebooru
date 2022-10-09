@@ -66,6 +66,7 @@ pub struct ViewPost {
     pub hash: Option<String>,
     pub ext: Option<String>,
     pub tn_ext: Option<String>,
+    pub tags: Vec<String>,
 }
 
 #[derive(Debug, sqlx::Type)]

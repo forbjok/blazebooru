@@ -10,6 +10,7 @@ use blazebooru_core::BlazeBooruCore;
 use crate::{auth::BlazeBooruAuth, server::BlazeBooruServer};
 
 mod auth;
+mod deserialize;
 mod server;
 
 #[derive(Debug, Parser)]

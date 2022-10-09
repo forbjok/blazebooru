@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, inject, ref, toRefs } from "vue";
 
+import Tags from "@/components/Tags.vue";
+
 import type { Post } from "@/models/api/post";
 import type { PathService } from "@/services/path";
 
@@ -32,6 +34,7 @@ const url = computed(() => path.make_image_path(post.value));
       {{ post.title }}
     </div>
     <div v-if="post.title" class="user">Uploaded by: {{ post.user_name }}</div>
+    <div v-if="post.tags">Tags: <Tags :tags="post.tags" /></div>
     <div v-if="post.description" class="description">
       <div class="header">Description</div>
       <div class="text">{{ post.description }}</div>

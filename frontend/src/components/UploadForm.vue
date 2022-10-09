@@ -4,6 +4,7 @@ import { computed, reactive, toRefs } from "vue";
 import { filesize } from "filesize";
 
 import type { PostInfo } from "@/models/api/post";
+import TagsEditor from "./TagsEditor.vue";
 
 interface Props {
   disabled?: boolean;
@@ -12,6 +13,7 @@ interface Props {
 interface ViewModel {
   title: string;
   description: string;
+  tags: string[];
   file?: File;
 }
 
@@ -30,6 +32,7 @@ const { disabled } = toRefs(props);
 const vm = reactive<ViewModel>({
   title: "",
   description: "",
+  tags: [],
 });
 
 const previewImage = computed(() => {
@@ -67,7 +70,9 @@ const upload = () => {
     return;
   }
 
-  let info: PostInfo = {};
+  let info: PostInfo = {
+    tags: vm.tags,
+  };
 
   if (vm.title) {
     info.title = vm.title;
@@ -85,6 +90,9 @@ const upload = () => {
   <form class="upload-form" @submit.prevent="upload">
     <label>Title</label>
     <input name="title" type="text" v-model="vm.title" placeholder="Title" title="Title" :disabled="disabled" />
+
+    <label>Tags</label>
+    <TagsEditor v-model="vm.tags" />
 
     <label>Description</label>
     <textarea
