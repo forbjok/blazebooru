@@ -53,8 +53,8 @@ struct PostSearchQuery {
 pub fn router(server: Arc<BlazeBooruServer>) -> Router<Arc<BlazeBooruServer>> {
     Router::with_state(server)
         .route("/:id", get(get_view_post))
+        .route("/count", get(search_view_posts_count))
         .route("/search", get(search_view_posts))
-        .route("/stats", get(get_posts_stats))
         .route("/upload", post(upload_post))
 }
 
@@ -94,19 +94,19 @@ async fn search_view_posts(
 }
 
 #[axum::debug_handler(state = Arc<BlazeBooruServer>)]
-async fn get_posts_stats(
+async fn search_view_posts_count(
     State(server): State<Arc<BlazeBooruServer>>,
     Query(PostSearchQuery {
         include_tags,
         exclude_tags,
     }): Query<PostSearchQuery>,
-) -> Result<Json<vm::PaginationStats>, ApiError> {
+) -> Result<Json<i32>, ApiError> {
     let include_tags = include_tags.iter().map(|t| t.as_str()).collect();
     let exclude_tags = exclude_tags.iter().map(|t| t.as_str()).collect();
 
     let stats = server
         .core
-        .get_posts_pagination_stats(include_tags, exclude_tags)
+        .search_view_posts_count(include_tags, exclude_tags)
         .await
         .context("Error getting posts pagination stats")?;
 

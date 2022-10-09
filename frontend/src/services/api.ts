@@ -1,6 +1,6 @@
 import axios from "axios";
 
-import type { PaginationStats, Post, PostInfo } from "@/models/api/post";
+import type { Post, PostInfo } from "@/models/api/post";
 import type { BlazeBooruAuthService } from "./auth";
 
 export class BlazeBooruApiService {
@@ -28,11 +28,11 @@ export class BlazeBooruApiService {
     return res.data;
   }
 
-  async get_posts_pagination_stats(include_tags: string[], exclude_tags: string[]) {
+  async search_posts_count(include_tags: string[], exclude_tags: string[]) {
     const t = include_tags.join(",") || undefined;
     const e = exclude_tags.join(",") || undefined;
 
-    const res = await axios.get<PaginationStats>("/api/post/stats", {
+    const res = await axios.get<number>("/api/post/count", {
       params: {
         t,
         e,

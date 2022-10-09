@@ -1,5 +1,4 @@
 use anyhow::Context;
-use blazebooru_models::view as vm;
 
 use crate::{models as dbm, PgStore, StoreError};
 
@@ -13,22 +12,14 @@ impl PgStore {
         Ok(post)
     }
 
-    pub async fn create_post(
-        &self,
-        post: &dbm::NewPost,
-        tags: &[&str],
-    ) -> Result<dbm::Post, StoreError> {
-        let post = sqlx::query_as_unchecked!(
-            dbm::Post,
-            r#"SELECT * FROM create_post($1, $2);"#,
-            post,
-            tags
-        )
-        .fetch_one(&self.pool)
-        .await
-        .context("Error creating post in database")?;
+    pub async fn create_post(&self, post: &dbm::NewPost, tags: &[&str]) -> Result<i32, StoreError> {
+        let new_post_id =
+            sqlx::query_scalar_unchecked!(r#"SELECT create_post($1, $2);"#, post, tags)
+                .fetch_one(&self.pool)
+                .await
+                .context("Error creating post in database")?;
 
-        Ok(post)
+        Ok(new_post_id.unwrap())
     }
 
     pub async fn get_view_post(&self, id: i32) -> Result<Option<dbm::ViewPost>, StoreError> {
@@ -53,11 +44,11 @@ impl PgStore {
     ) -> Result<Vec<dbm::ViewPost>, StoreError> {
         let posts = sqlx::query_as_unchecked!(
             dbm::ViewPost,
-            r#"SELECT * FROM search_view_posts($1, $2) ORDER BY id DESC LIMIT $3 OFFSET $4;"#,
+            r#"SELECT * FROM search_view_posts($1, $2, $3, $4);"#,
             include_tags,
             exclude_tags,
-            limit,
-            offset
+            offset,
+            limit
         )
         .fetch_all(&self.pool)
         .await
@@ -66,14 +57,13 @@ impl PgStore {
         Ok(posts)
     }
 
-    pub async fn get_posts_pagination_stats(
+    pub async fn search_view_posts_count(
         &self,
         include_tags: &[&str],
         exclude_tags: &[&str],
-    ) -> Result<vm::PaginationStats, StoreError> {
-        let stats = sqlx::query_as_unchecked!(
-            vm::PaginationStats,
-            r#"SELECT COALESCE(MAX(id), 0) AS max_id, COALESCE(COUNT(*)::integer, 0) AS count FROM search_view_posts($1, $2);"#,
+    ) -> Result<i32, StoreError> {
+        let stats = sqlx::query_scalar_unchecked!(
+            r#"SELECT search_view_posts_count($1, $2);"#,
             include_tags,
             exclude_tags
         )
@@ -81,6 +71,6 @@ impl PgStore {
         .await
         .context("Error getting post pagination stats from database")?;
 
-        Ok(stats)
+        Ok(stats.unwrap())
     }
 }

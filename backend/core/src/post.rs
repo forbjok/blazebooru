@@ -62,9 +62,9 @@ impl BlazeBooruCore {
             tn_ext: Some(tn_ext.into()),
         };
 
-        let post = self.store.create_post(&db_post, &post.tags).await?;
+        let new_post_id = self.store.create_post(&db_post, &post.tags).await?;
 
-        Ok(post.id.unwrap())
+        Ok(new_post_id)
     }
 
     pub async fn get_view_post(&self, id: i32) -> Result<Option<vm::Post>, anyhow::Error> {
@@ -91,14 +91,14 @@ impl BlazeBooruCore {
         Ok(posts)
     }
 
-    pub async fn get_posts_pagination_stats(
+    pub async fn search_view_posts_count(
         &self,
         include_tags: Vec<&str>,
         exclude_tags: Vec<&str>,
-    ) -> Result<vm::PaginationStats, anyhow::Error> {
+    ) -> Result<i32, anyhow::Error> {
         let stats = self
             .store
-            .get_posts_pagination_stats(&include_tags, &exclude_tags)
+            .search_view_posts_count(&include_tags, &exclude_tags)
             .await?;
 
         Ok(stats)

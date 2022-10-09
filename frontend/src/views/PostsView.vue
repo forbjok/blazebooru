@@ -6,7 +6,7 @@ import Posts from "@/components/Posts.vue";
 
 import type { BlazeBooruApiService } from "@/services/api";
 import type { Settings } from "@/models/settings";
-import type { PaginationStats, Post } from "@/models/api/post";
+import type { Post } from "@/models/api/post";
 import type { BlazeBooruAuthService } from "@/services/auth";
 import SearchPanel from "../components/SearchPanel.vue";
 
@@ -23,12 +23,12 @@ const api = inject<BlazeBooruApiService>("api")!;
 const auth = inject<BlazeBooruAuthService>("auth")!;
 const settings = inject<Settings>("settings")!;
 
-const pagination_stats = ref<PaginationStats>();
 const posts = ref<Post[]>();
 const current_page = ref<number>(0);
 const current_search = ref<SearchCriteria>({ tags: [], exclude_tags: [] });
+const current_search_post_count = ref<number>(0);
 
-const page_count = computed(() => Math.ceil((pagination_stats.value?.count ?? 0) / POSTS_PER_PAGE));
+const page_count = computed(() => Math.ceil((current_search_post_count.value ?? 0) / POSTS_PER_PAGE));
 const pages = computed(() => {
   const pages: number[] = [];
 
@@ -68,11 +68,6 @@ const loadPosts = async (offset: number) => {
 };
 
 const loadPage = async (page: number) => {
-  const stats = pagination_stats.value;
-  if (!stats) {
-    return;
-  }
-
   const offset = page * POSTS_PER_PAGE;
   await loadPosts(offset);
 
@@ -82,12 +77,10 @@ const loadPage = async (page: number) => {
 const searchPosts = async (tags: string[], exclude_tags: string[]) => {
   current_search.value = { tags, exclude_tags };
 
-  const stats = await api.get_posts_pagination_stats(tags, exclude_tags);
-  pagination_stats.value = stats;
+  const count = await api.search_posts_count(tags, exclude_tags);
+  current_search_post_count.value = count;
 
-  if (stats) {
-    await loadPage(0);
-  }
+  await loadPage(0);
 };
 </script>
 
