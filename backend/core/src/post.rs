@@ -91,8 +91,15 @@ impl BlazeBooruCore {
         Ok(posts)
     }
 
-    pub async fn get_posts_pagination_stats(&self) -> Result<vm::PaginationStats, anyhow::Error> {
-        let stats = self.store.get_posts_pagination_stats().await?;
+    pub async fn get_posts_pagination_stats(
+        &self,
+        include_tags: Vec<&str>,
+        exclude_tags: Vec<&str>,
+    ) -> Result<vm::PaginationStats, anyhow::Error> {
+        let stats = self
+            .store
+            .get_posts_pagination_stats(&include_tags, &exclude_tags)
+            .await?;
 
         Ok(stats)
     }

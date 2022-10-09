@@ -1,0 +1,48 @@
+<script setup lang="ts">
+import { toRefs } from "vue";
+
+interface Props {
+  tags: string[];
+  actions?: boolean;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  actions: false,
+});
+
+const emit = defineEmits<{
+  (e: "delete", index: number): void;
+}>();
+
+const { tags, actions } = toRefs(props);
+</script>
+
+<template>
+  <div class="tags">
+    <div v-for="(t, i) of tags" :key="t" class="tag">
+      <span>{{ t }}</span
+      ><button v-if="actions" class="delete-button link-button" type="button" @click="emit('delete', i)">x</button>
+    </div>
+  </div>
+</template>
+
+<style scoped lang="scss">
+$thumbnail-size: 200px;
+
+.tags {
+  display: inline-flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 0.2rem;
+}
+
+.tag {
+  display: inline-flex;
+  flex-direction: row;
+  gap: 0.3rem;
+
+  background-color: var(--color-tag-background);
+
+  padding: 0.1rem 0.3rem;
+}
+</style>

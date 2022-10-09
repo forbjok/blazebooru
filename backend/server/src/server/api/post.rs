@@ -32,7 +32,14 @@ struct PostInfo {
 }
 
 #[derive(Deserialize)]
-struct PostsQuery {
+struct PaginatedQuery {
+    #[serde(default)]
+    offset: i32,
+    limit: i32,
+}
+
+#[derive(Deserialize)]
+struct PostSearchQuery {
     #[serde(rename = "t")]
     #[serde(default)]
     #[serde(deserialize_with = "crate::deserialize::comma_separated")]
@@ -41,9 +48,6 @@ struct PostsQuery {
     #[serde(default)]
     #[serde(deserialize_with = "crate::deserialize::comma_separated")]
     exclude_tags: Vec<String>,
-
-    offset: i32,
-    limit: i32,
 }
 
 pub fn router(server: Arc<BlazeBooruServer>) -> Router<Arc<BlazeBooruServer>> {
@@ -71,12 +75,11 @@ async fn get_view_post(
 #[axum::debug_handler(state = Arc<BlazeBooruServer>)]
 async fn search_view_posts(
     State(server): State<Arc<BlazeBooruServer>>,
-    Query(PostsQuery {
+    Query(PostSearchQuery {
         include_tags,
         exclude_tags,
-        offset,
-        limit,
-    }): Query<PostsQuery>,
+    }): Query<PostSearchQuery>,
+    Query(PaginatedQuery { offset, limit }): Query<PaginatedQuery>,
 ) -> Result<Json<Vec<vm::Post>>, ApiError> {
     let include_tags = include_tags.iter().map(|t| t.as_str()).collect();
     let exclude_tags = exclude_tags.iter().map(|t| t.as_str()).collect();
@@ -93,10 +96,17 @@ async fn search_view_posts(
 #[axum::debug_handler(state = Arc<BlazeBooruServer>)]
 async fn get_posts_stats(
     State(server): State<Arc<BlazeBooruServer>>,
+    Query(PostSearchQuery {
+        include_tags,
+        exclude_tags,
+    }): Query<PostSearchQuery>,
 ) -> Result<Json<vm::PaginationStats>, ApiError> {
+    let include_tags = include_tags.iter().map(|t| t.as_str()).collect();
+    let exclude_tags = exclude_tags.iter().map(|t| t.as_str()).collect();
+
     let stats = server
         .core
-        .get_posts_pagination_stats()
+        .get_posts_pagination_stats(include_tags, exclude_tags)
         .await
         .context("Error getting posts pagination stats")?;
 

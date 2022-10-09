@@ -84,6 +84,29 @@ BEGIN
 END;
 $BODY$;
 
+-- Update view_post view
+CREATE OR REPLACE VIEW view_post
+AS
+SELECT
+  p.id,
+  p.created_at,
+  u.name AS user_name,
+  p.title,
+  p.description,
+  p.filename,
+  p.size,
+  p.width,
+  p.height,
+  p.hash,
+  p.ext,
+  p.tn_ext,
+  (SELECT COALESCE(array_agg(t.tag), ARRAY[]::text[])
+   FROM tag AS t
+   JOIN post_tag AS pt ON pt.tag_id = t.id
+   WHERE pt.post_id = p.id) AS tags
+FROM post AS p
+JOIN "user" AS u ON u.id = p.user_id;
+
 -- Create search_view_posts function
 CREATE OR REPLACE FUNCTION search_view_posts(
   IN p_include_tags text[],
@@ -98,19 +121,9 @@ BEGIN
   SELECT p.*
   FROM view_post AS p
   WHERE
-    -- Post must not have any of the excluded tags
-    NOT EXISTS(
-      SELECT *
-      FROM tag AS t
-      JOIN post_tag AS pt ON pt.tag_id = t.id
-      WHERE pt.post_id = p.id AND t.tag = ANY(p_exclude_tags)
-    )
     -- Post must have all the included tags
-    AND (
-      SELECT COALESCE(array_agg(t.tag), ARRAY[]::text[])
-      FROM tag AS t
-      JOIN post_tag AS pt ON pt.tag_id = t.id
-      WHERE pt.post_id = p.id
-    ) @> p_include_tags;
+    p.tags @> p_include_tags
+    -- Post must not have any of the excluded tags
+    AND NOT p.tags && p_exclude_tags;
 END;
 $BODY$;

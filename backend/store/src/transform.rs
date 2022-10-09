@@ -48,6 +48,7 @@ impl From<dbm::ViewPost> for vm::Post {
             hash: p.hash.unwrap(),
             ext: p.ext.unwrap(),
             tn_ext: p.tn_ext.unwrap(),
+            tags: p.tags,
         }
     }
 }

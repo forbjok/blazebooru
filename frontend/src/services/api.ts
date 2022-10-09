@@ -7,40 +7,39 @@ export class BlazeBooruApiService {
   constructor(private auth: BlazeBooruAuthService) {}
 
   async get_post(id: number) {
-    try {
-      const res = await axios.get<Post>(`/api/post/${id}`);
+    const res = await axios.get<Post>(`/api/post/${id}`);
 
-      return res.data;
-    } catch {
-      return;
-    }
+    return res.data;
   }
 
   async search_posts(include_tags: string[], exclude_tags: string[], offset: number, limit: number) {
-    try {
-      const res = await axios.get<Post[]>("/api/post/search", {
-        params: {
-          t: include_tags,
-          e: exclude_tags,
-          offset,
-          limit,
-        },
-      });
+    const t = include_tags.join(",") || undefined;
+    const e = exclude_tags.join(",") || undefined;
 
-      return res.data;
-    } catch {
-      return;
-    }
+    const res = await axios.get<Post[]>("/api/post/search", {
+      params: {
+        t,
+        e,
+        offset,
+        limit,
+      },
+    });
+
+    return res.data;
   }
 
-  async get_posts_pagination_stats() {
-    try {
-      const res = await axios.get<PaginationStats>("/api/post/stats");
+  async get_posts_pagination_stats(include_tags: string[], exclude_tags: string[]) {
+    const t = include_tags.join(",") || undefined;
+    const e = exclude_tags.join(",") || undefined;
 
-      return res.data;
-    } catch {
-      return;
-    }
+    const res = await axios.get<PaginationStats>("/api/post/stats", {
+      params: {
+        t,
+        e,
+      },
+    });
+
+    return res.data;
   }
 
   async upload_post(info: PostInfo, file: File) {

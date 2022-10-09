@@ -22,7 +22,7 @@ const logout = async () => {
       </span>
       <span v-if="auth.isAuthorized.value" class="user-authorized">
         <span class="username"><i class="fa-solid fa-user"></i> {{ auth.userProfile.value?.name }}</span>
-        <span class="logout"> [ <button @click="logout">Log out</button> ] </span>
+        <span class="logout"> [ <button class="link-button" @click="logout">Log out</button> ] </span>
       </span>
       <span v-if="!auth.isAuthorized.value" class="user-unauthorized">
         <span class="login"> [ <router-link :to="{ name: 'login' }">Login</router-link> ] </span>
@@ -38,6 +38,8 @@ const logout = async () => {
 <style scoped lang="scss">
 .layout {
   padding-top: 2rem;
+
+  min-height: 100vh;
 }
 
 .header-bar {
@@ -82,22 +84,6 @@ const logout = async () => {
 
   .username {
     padding-right: 1rem;
-  }
-
-  button {
-    background: none;
-    border: none;
-    color: var(--color-link);
-
-    padding: 0;
-
-    &:enabled {
-      cursor: pointer !important;
-    }
-
-    &:hover {
-      color: var(--color-link-hover);
-    }
   }
 }
 </style>

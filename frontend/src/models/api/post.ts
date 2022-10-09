@@ -11,11 +11,13 @@ export interface Post {
   hash: string;
   ext: string;
   tn_ext: string;
+  tags: string[];
 }
 
 export interface PostInfo {
   title?: string;
   description?: string;
+  tags: string[];
 }
 
 export interface PaginationStats {

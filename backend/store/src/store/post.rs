@@ -66,10 +66,16 @@ impl PgStore {
         Ok(posts)
     }
 
-    pub async fn get_posts_pagination_stats(&self) -> Result<vm::PaginationStats, StoreError> {
+    pub async fn get_posts_pagination_stats(
+        &self,
+        include_tags: &[&str],
+        exclude_tags: &[&str],
+    ) -> Result<vm::PaginationStats, StoreError> {
         let stats = sqlx::query_as_unchecked!(
             vm::PaginationStats,
-            r#"SELECT MAX(id) AS max_id, COUNT(*)::integer AS count FROM post;"#
+            r#"SELECT COALESCE(MAX(id), 0) AS max_id, COALESCE(COUNT(*)::integer, 0) AS count FROM search_view_posts($1, $2);"#,
+            include_tags,
+            exclude_tags
         )
         .fetch_one(&self.pool)
         .await
