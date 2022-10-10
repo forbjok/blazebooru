@@ -65,18 +65,33 @@ impl PgStore {
         page_count: i32,
         origin_page: Option<dbm::PageInfo>,
     ) -> Result<Vec<dbm::PageInfo>, StoreError> {
-        let pages = sqlx::query_as_unchecked!(
-            dbm::PageInfo,
-            r#"SELECT * FROM unnest(calculate_pages($1, $2, $3, $4, $5));"#,
-            include_tags,
-            exclude_tags,
-            posts_per_page,
-            page_count,
-            origin_page
-        )
-        .fetch_all(&self.pool)
-        .await
-        .context("Error calculating last page")?;
+        let pages = if page_count < 0 {
+            sqlx::query_as_unchecked!(
+                dbm::PageInfo,
+                r#"SELECT * FROM unnest(calculate_pages_reverse($1, $2, $3, $4, $5));"#,
+                include_tags,
+                exclude_tags,
+                posts_per_page,
+                -page_count,
+                origin_page
+            )
+            .fetch_all(&self.pool)
+            .await
+            .context("Error calculating last page")?
+        } else {
+            sqlx::query_as_unchecked!(
+                dbm::PageInfo,
+                r#"SELECT * FROM unnest(calculate_pages($1, $2, $3, $4, $5));"#,
+                include_tags,
+                exclude_tags,
+                posts_per_page,
+                page_count,
+                origin_page
+            )
+            .fetch_all(&self.pool)
+            .await
+            .context("Error calculating last page")?
+        };
 
         Ok(pages)
     }

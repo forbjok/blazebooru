@@ -224,6 +224,58 @@ BEGIN
 END;
 $BODY$;
 
+-- Create calculate_pages_reverse function
+-- Like calculate_pages, but in reverse.
+-- (Calculates previous pages)
+CREATE OR REPLACE FUNCTION calculate_pages_reverse(
+  IN p_include_tags text[],
+  IN p_exclude_tags text[],
+  IN p_posts_per_page integer,
+  IN p_page_count integer,
+  IN p_origin_page page_info
+)
+RETURNS page_info[]
+LANGUAGE plpgsql
+
+AS $BODY$
+DECLARE
+  v_pages page_info[];
+  v_valid boolean;
+BEGIN
+  SELECT * INTO p_include_tags, p_exclude_tags, v_valid FROM validate_tags(p_include_tags, p_exclude_tags);
+  IF NOT v_valid THEN
+    RETURN v_pages;
+  END IF;
+
+  SELECT
+    array_agg((x.no, x.start_id)::page_info) INTO v_pages
+  FROM (
+    SELECT
+      COALESCE(p_origin_page.no, 0) - ROW_NUMBER() OVER () + 1 AS no,
+      x.id AS start_id
+    FROM (
+      SELECT
+        id,
+        ROW_NUMBER() OVER () AS rn
+      FROM view_post
+      WHERE
+        -- Start from origin page
+        id >= p_origin_page.start_id
+        -- Post must have all the included tags
+        AND tags @> p_include_tags
+        -- Post must not have any of the excluded tags
+        AND NOT tags && p_exclude_tags
+      ORDER BY id ASC
+      LIMIT ((p_page_count + 1) * p_posts_per_page) -- X pages at a time
+    ) AS x
+    WHERE MOD(x.rn - 1, p_posts_per_page) = 0
+  ) AS x
+  WHERE x.no < p_origin_page.no;
+
+  RETURN v_pages;
+END;
+$BODY$;
+
 -- Update get_view_posts function
 CREATE OR REPLACE FUNCTION get_view_posts(
   IN p_include_tags text[],

@@ -21,7 +21,7 @@ export const useMainStore = defineStore("main", () => {
   const authStore = useAuthStore();
 
   const activeSearch = ref<Search>();
-  const calculatedPages = ref<Record<number, PageInfo>>({});
+  let calculatedPages: Record<number, PageInfo> = {};
   const lastPage = ref<PageInfo>();
   const currentPage = ref(-1);
   const posts = ref<Post[]>([]);
@@ -97,7 +97,7 @@ export const useMainStore = defineStore("main", () => {
       },
     });
 
-    return res.data;
+    addCalculatedPages(res.data);
   }
 
   async function calculateLastPage() {
@@ -117,7 +117,8 @@ export const useMainStore = defineStore("main", () => {
       },
     });
 
-    return res.data;
+    lastPage.value = res.data;
+    addCalculatedPages([res.data]);
   }
 
   async function uploadPost(info: PostInfo, file: File) {
@@ -142,27 +143,53 @@ export const useMainStore = defineStore("main", () => {
     posts.value = await fetchPosts(search.tags, search.exclude_tags, start_id);
   }
 
+  function findNearestPage(page: number) {
+    const nearestPages = (Object.values(calculatedPages) as unknown as PageInfo[]).sort(
+      (a, b) => Math.abs(page - a.no) - Math.abs(page - b.no)
+    );
+
+    const nearestPage = nearestPages[0];
+    if (!nearestPage) {
+      return;
+    }
+
+    if (nearestPage.no < page) {
+      const stopAtPage = nearestPages.find((pi) => pi.no > page);
+
+      const toPageNo = stopAtPage && stopAtPage.no < page + PAGES_SHOWN ? stopAtPage.no : page + PAGES_SHOWN;
+      return { nearestPage, length: toPageNo - nearestPage.no };
+    } else {
+      const startAtPage = nearestPages.find((pi) => pi.no < page);
+
+      const fromPageNo = startAtPage && startAtPage.no > page - PAGES_SHOWN ? startAtPage.no : page - PAGES_SHOWN;
+      return { nearestPage, length: fromPageNo - nearestPage.no };
+    }
+  }
+
+  async function getPage(page: number) {
+    const pageInfo = calculatedPages[page];
+    if (pageInfo) {
+      return pageInfo;
+    }
+
+    const nearestPage = findNearestPage(page);
+    if (nearestPage) {
+      const { nearestPage: originPage, length } = nearestPage;
+      await calculatePages(originPage, length);
+    } else {
+      await calculatePages(undefined, page + PAGES_SHOWN);
+    }
+
+    return calculatedPages[page];
+  }
+
   async function loadPage(page: number) {
     // We are already on this page, do nothing.
     if (currentPage.value == page) {
       return;
     }
 
-    let pageInfo = calculatedPages.value[page];
-    if (!pageInfo) {
-      if (page > currentPage.value) {
-        const pages = await calculatePages(
-          calculatedPages.value[currentPage.value],
-          page - currentPage.value + PAGES_SHOWN
-        );
-        addCalculatedPages(pages || []);
-      } else {
-        const pages = await calculatePages(undefined, page + PAGES_SHOWN);
-        addCalculatedPages(pages || []);
-      }
-
-      pageInfo = calculatedPages.value[page];
-    }
+    const pageInfo = await getPage(page);
 
     currentPage.value = page;
     await loadPosts(pageInfo.start_id);
@@ -174,21 +201,17 @@ export const useMainStore = defineStore("main", () => {
 
   function addCalculatedPages(pages: PageInfo[]) {
     for (const p of pages) {
-      calculatedPages.value[p.no] = p;
+      calculatedPages[p.no] = p;
     }
   }
 
   async function searchPosts(tags: string[], exclude_tags: string[]) {
     activeSearch.value = { tags, exclude_tags };
     currentPage.value = -1;
-    calculatedPages.value = [];
-
-    const pages = (await calculatePages()) || [];
-    lastPage.value = (await calculateLastPage())!;
-
-    addCalculatedPages([...pages, lastPage.value]);
+    calculatedPages = [];
 
     await loadPage(1);
+    await calculateLastPage();
   }
 
   async function initializePosts() {
