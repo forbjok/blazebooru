@@ -167,12 +167,68 @@ BEGIN
 END;
 $BODY$;
 
--- Update search_view_posts function
+-- Create page_info type
+CREATE TYPE page_info AS (no integer, start_id integer);
+
+-- Drop deprecated functions
 DROP FUNCTION search_view_posts;
-CREATE OR REPLACE FUNCTION search_view_posts(
+
+-- Create calculate_pages function
+-- Calculate the starting IDs of a range of pages,
+-- optionally starting from an already known page.
+CREATE OR REPLACE FUNCTION calculate_pages(
   IN p_include_tags text[],
   IN p_exclude_tags text[],
-  IN p_offset integer,
+  IN p_posts_per_page integer,
+  IN p_page_count integer,
+  IN p_origin_page page_info
+)
+RETURNS page_info[]
+LANGUAGE plpgsql
+
+AS $BODY$
+DECLARE
+  v_pages page_info[];
+  v_valid boolean;
+BEGIN
+  SELECT * INTO p_include_tags, p_exclude_tags, v_valid FROM validate_tags(p_include_tags, p_exclude_tags);
+  IF NOT v_valid THEN
+    RETURN v_pages;
+  END IF;
+
+  SELECT
+    array_agg((x.no, x.start_id)::page_info) INTO v_pages
+  FROM (
+    SELECT
+      COALESCE(p_origin_page.no, 0) + ROW_NUMBER() OVER () AS no,
+      x.id AS start_id
+    FROM (
+      SELECT
+        id,
+        ROW_NUMBER() OVER () AS rn
+      FROM view_post
+      WHERE
+        -- Start from origin page
+        (p_origin_page IS NULL OR id < p_origin_page.start_id)
+        -- Post must have all the included tags
+        AND tags @> p_include_tags
+        -- Post must not have any of the excluded tags
+        AND NOT tags && p_exclude_tags
+      ORDER BY id DESC
+      LIMIT (p_page_count * p_posts_per_page) -- X pages at a time
+    ) AS x
+    WHERE MOD(x.rn - 1, p_posts_per_page) = 0
+  ) AS x;
+
+  RETURN v_pages;
+END;
+$BODY$;
+
+-- Update get_view_posts function
+CREATE OR REPLACE FUNCTION get_view_posts(
+  IN p_include_tags text[],
+  IN p_exclude_tags text[],
+  IN p_start_id integer,
   IN p_limit integer
 )
 RETURNS SETOF view_post
@@ -191,45 +247,53 @@ BEGIN
   SELECT *
   FROM view_post
   WHERE
+    id <= p_start_id
     -- Post must have all the included tags
-    tags @> p_include_tags
+    AND tags @> p_include_tags
     -- Post must not have any of the excluded tags
     AND NOT tags && p_exclude_tags
   ORDER BY id DESC
-  LIMIT p_limit
-  OFFSET p_offset;
+  LIMIT p_limit;
 END;
 $BODY$;
 
 -- Create search_view_posts_stats function
-CREATE OR REPLACE FUNCTION search_view_posts_count(
+CREATE OR REPLACE FUNCTION calculate_last_page(
   IN p_include_tags text[],
-  IN p_exclude_tags text[]
+  IN p_exclude_tags text[],
+  IN p_posts_per_page integer
 )
-RETURNS integer
+RETURNS page_info
 LANGUAGE plpgsql
 
 AS $BODY$
 DECLARE
   v_valid boolean;
+  v_post_count integer;
+  v_page_count integer;
+  v_last_page_start_id integer;
 BEGIN
   SELECT * INTO p_include_tags, p_exclude_tags, v_valid FROM validate_tags(p_include_tags, p_exclude_tags);
   IF NOT v_valid THEN
-    RETURN 0;
+    RETURN (1, 0)::page_info;
   END IF;
 
   IF cardinality(p_include_tags) = 0 AND cardinality(p_exclude_tags) = 0 THEN
-    RETURN (SELECT reltuples FROM pg_class where relname = 'post');
-  END IF;
-
-  RETURN (
-    SELECT COALESCE(COUNT(*)::integer, 0)
+    v_post_count := (SELECT reltuples FROM pg_class where relname = 'post');
+  ELSE
+    -- Get total post count in search
+    SELECT COALESCE(COUNT(*)::integer, 0) INTO v_post_count
     FROM view_post
     WHERE
       -- Post must have all the included tags
       tags @> p_include_tags
       -- Post must not have any of the excluded tags
-      AND NOT tags && p_exclude_tags
-  );
+      AND NOT tags && p_exclude_tags;
+  END IF;
+
+  v_page_count := CEIL(v_post_count / p_posts_per_page);
+  v_last_page_start_id := v_post_count - (v_page_count * p_posts_per_page);
+
+  RETURN (v_page_count, v_last_page_start_id)::page_info;
 END;
 $BODY$;

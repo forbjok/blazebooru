@@ -22,7 +22,7 @@ onMounted(async () => {
         <div class="content">
           <Posts v-if="mainStore.posts" :posts="mainStore.posts" />
           <div v-if="mainStore.pageCount > 1" class="pages">
-            <button class="page first link-button" title="First page" @click="mainStore.loadPage(0)">&lt;&lt;</button>
+            <button class="page first link-button" title="First page" @click="mainStore.loadPage(1)">&lt;&lt;</button>
             [
             <button
               v-for="p in mainStore.pages"
@@ -31,7 +31,7 @@ onMounted(async () => {
               :class="{ current: p === mainStore.currentPage }"
               @click="mainStore.loadPage(p)"
             >
-              {{ p + 1 }}
+              {{ p }}
             </button>
             ]
             <button class="page last link-button" title="Last page" @click="mainStore.loadLastPage()">>></button>

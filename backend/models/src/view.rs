@@ -24,3 +24,9 @@ pub struct User {
     pub created_at: DateTime<Utc>,
     pub name: String,
 }
+
+#[derive(Debug, Serialize)]
+pub struct PageInfo {
+    pub no: i32,
+    pub start_id: i32,
+}

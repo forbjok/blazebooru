@@ -71,6 +71,13 @@ pub struct ViewPost {
 }
 
 #[derive(Debug, sqlx::Type)]
+#[sqlx(type_name = "page_info")]
+pub struct PageInfo {
+    pub no: Option<i32>,
+    pub start_id: Option<i32>,
+}
+
+#[derive(Debug, sqlx::Type)]
 #[sqlx(type_name = "refresh_refresh_token_result")]
 pub struct CreateRefreshTokenResult {
     pub token: Option<Uuid>,

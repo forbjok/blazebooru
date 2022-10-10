@@ -1,3 +1,8 @@
+export interface PageInfo {
+  no: number;
+  start_id: number;
+}
+
 export interface Post {
   id: number;
   created_at: string;

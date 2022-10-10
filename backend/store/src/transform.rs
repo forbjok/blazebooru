@@ -52,3 +52,21 @@ impl From<dbm::ViewPost> for vm::Post {
         }
     }
 }
+
+impl From<dbm::PageInfo> for vm::PageInfo {
+    fn from(p: dbm::PageInfo) -> Self {
+        vm::PageInfo {
+            no: p.no.unwrap(),
+            start_id: p.start_id.unwrap(),
+        }
+    }
+}
+
+impl From<vm::PageInfo> for dbm::PageInfo {
+    fn from(p: vm::PageInfo) -> Self {
+        dbm::PageInfo {
+            no: Some(p.no),
+            start_id: Some(p.start_id),
+        }
+    }
+}

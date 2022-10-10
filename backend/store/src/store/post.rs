@@ -35,19 +35,19 @@ impl PgStore {
         Ok(post)
     }
 
-    pub async fn search_view_posts(
+    pub async fn get_view_posts(
         &self,
         include_tags: &[&str],
         exclude_tags: &[&str],
-        offset: i32,
+        start_id: i32,
         limit: i32,
     ) -> Result<Vec<dbm::ViewPost>, StoreError> {
         let posts = sqlx::query_as_unchecked!(
             dbm::ViewPost,
-            r#"SELECT * FROM search_view_posts($1, $2, $3, $4);"#,
+            r#"SELECT * FROM get_view_posts($1, $2, $3, $4);"#,
             include_tags,
             exclude_tags,
-            offset,
+            start_id,
             limit
         )
         .fetch_all(&self.pool)
@@ -57,20 +57,47 @@ impl PgStore {
         Ok(posts)
     }
 
-    pub async fn search_view_posts_count(
+    pub async fn calculate_pages(
         &self,
         include_tags: &[&str],
         exclude_tags: &[&str],
-    ) -> Result<i32, StoreError> {
-        let stats = sqlx::query_scalar_unchecked!(
-            r#"SELECT search_view_posts_count($1, $2);"#,
+        posts_per_page: i32,
+        page_count: i32,
+        origin_page: Option<dbm::PageInfo>,
+    ) -> Result<Vec<dbm::PageInfo>, StoreError> {
+        let pages = sqlx::query_as_unchecked!(
+            dbm::PageInfo,
+            r#"SELECT * FROM unnest(calculate_pages($1, $2, $3, $4, $5));"#,
             include_tags,
-            exclude_tags
+            exclude_tags,
+            posts_per_page,
+            page_count,
+            origin_page
+        )
+        .fetch_all(&self.pool)
+        .await
+        .context("Error calculating last page")?;
+
+        Ok(pages)
+    }
+
+    pub async fn calculate_last_page(
+        &self,
+        include_tags: &[&str],
+        exclude_tags: &[&str],
+        posts_per_page: i32,
+    ) -> Result<dbm::PageInfo, StoreError> {
+        let page = sqlx::query_as_unchecked!(
+            dbm::PageInfo,
+            r#"SELECT * FROM calculate_last_page($1, $2, $3);"#,
+            include_tags,
+            exclude_tags,
+            posts_per_page
         )
         .fetch_one(&self.pool)
         .await
-        .context("Error getting post pagination stats from database")?;
+        .context("Error calculating last page")?;
 
-        Ok(stats.unwrap())
+        Ok(page)
     }
 }

@@ -73,16 +73,16 @@ impl BlazeBooruCore {
         Ok(post)
     }
 
-    pub async fn search_view_posts(
+    pub async fn get_view_posts(
         &self,
         include_tags: Vec<&str>,
         exclude_tags: Vec<&str>,
-        offset: i32,
+        start_id: i32,
         limit: i32,
     ) -> Result<Vec<vm::Post>, anyhow::Error> {
         let posts = self
             .store
-            .search_view_posts(&include_tags, &exclude_tags, offset, limit)
+            .get_view_posts(&include_tags, &exclude_tags, start_id, limit)
             .await?
             .into_iter()
             .map(vm::Post::from)
@@ -91,16 +91,39 @@ impl BlazeBooruCore {
         Ok(posts)
     }
 
-    pub async fn search_view_posts_count(
+    pub async fn calculate_pages(
         &self,
         include_tags: Vec<&str>,
         exclude_tags: Vec<&str>,
-    ) -> Result<i32, anyhow::Error> {
-        let stats = self
+        posts_per_page: i32,
+        page_count: i32,
+        origin_page: Option<vm::PageInfo>,
+    ) -> Result<Vec<vm::PageInfo>, anyhow::Error> {
+        let pages = self
             .store
-            .search_view_posts_count(&include_tags, &exclude_tags)
+            .calculate_pages(
+                &include_tags,
+                &exclude_tags,
+                posts_per_page,
+                page_count,
+                origin_page.map(dbm::PageInfo::from),
+            )
             .await?;
 
-        Ok(stats)
+        Ok(pages.into_iter().map(vm::PageInfo::from).collect())
+    }
+
+    pub async fn calculate_last_page(
+        &self,
+        include_tags: Vec<&str>,
+        exclude_tags: Vec<&str>,
+        posts_per_page: i32,
+    ) -> Result<vm::PageInfo, anyhow::Error> {
+        let page = self
+            .store
+            .calculate_last_page(&include_tags, &exclude_tags, posts_per_page)
+            .await?;
+
+        Ok(vm::PageInfo::from(page))
     }
 }
