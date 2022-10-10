@@ -309,7 +309,7 @@ BEGIN
 END;
 $BODY$;
 
--- Create search_view_posts_stats function
+-- Create calculate_last_page function
 CREATE OR REPLACE FUNCTION calculate_last_page(
   IN p_include_tags text[],
   IN p_exclude_tags text[],
@@ -332,6 +332,8 @@ BEGIN
 
   IF cardinality(p_include_tags) = 0 AND cardinality(p_exclude_tags) = 0 THEN
     v_post_count := (SELECT reltuples FROM pg_class where relname = 'post');
+    v_page_count := CEIL(v_post_count / p_posts_per_page);
+    v_last_page_start_id := v_post_count - (v_page_count * p_posts_per_page);
   ELSE
     -- Get total post count in search
     SELECT COALESCE(COUNT(*)::integer, 0) INTO v_post_count
@@ -341,10 +343,22 @@ BEGIN
       tags @> p_include_tags
       -- Post must not have any of the excluded tags
       AND NOT tags && p_exclude_tags;
-  END IF;
 
-  v_page_count := CEIL(v_post_count / p_posts_per_page);
-  v_last_page_start_id := v_post_count - (v_page_count * p_posts_per_page);
+    -- Calculate page count
+    v_page_count := CEIL(v_post_count / p_posts_per_page);
+
+    -- Get start id of last page
+    SELECT id INTO v_last_page_start_id
+    FROM view_post
+    WHERE
+      -- Post must have all the included tags
+      tags @> p_include_tags
+      -- Post must not have any of the excluded tags
+      AND NOT tags && p_exclude_tags
+    ORDER BY id ASC
+    LIMIT 1
+    OFFSET v_post_count - (v_page_count * p_posts_per_page);
+  END IF;
 
   RETURN (v_page_count, v_last_page_start_id)::page_info;
 END;
