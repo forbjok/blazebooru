@@ -13,7 +13,7 @@ export interface Search {
   exclude_tags: string[];
 }
 
-const POSTS_PER_PAGE = 50;
+const POSTS_PER_PAGE = 28;
 const PAGES_SHOWN = 13;
 const HALF_PAGES_SHOWN = Math.floor(PAGES_SHOWN / 2);
 
