@@ -14,9 +14,15 @@ const { posts } = toRefs(props);
 
 <template>
   <div class="posts">
-    <a v-for="p in posts" :key="p.id" :href="`/post/${p.id}`" :title="p.title" class="post">
+    <router-link
+      v-for="p in posts"
+      :key="p.id"
+      :to="{ name: 'post', params: { id: p.id } }"
+      :title="p.title"
+      class="post"
+    >
       <img :src="make_thumbnail_path(p)" />
-    </a>
+    </router-link>
   </div>
 </template>
 
