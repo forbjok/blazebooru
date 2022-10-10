@@ -1,13 +1,12 @@
 <script setup lang="ts">
-import { inject, onMounted, ref, toRefs } from "vue";
+import { onMounted, ref, toRefs } from "vue";
 
 import MainLayout from "@/components/MainLayout.vue";
 import Post from "@/components/Post.vue";
 
-import type { BlazeBooruApiService } from "@/services/api";
-import type { Settings } from "@/models/settings";
+import { useMainStore } from "@/stores/main";
+
 import type { Post as PostModel } from "@/models/api/post";
-import type { BlazeBooruAuthService } from "@/services/auth";
 
 const props = defineProps<{
   id: number;
@@ -15,22 +14,17 @@ const props = defineProps<{
 
 const { id } = toRefs(props);
 
-const api = inject<BlazeBooruApiService>("api")!;
-const auth = inject<BlazeBooruAuthService>("auth")!;
-const settings = inject<Settings>("settings")!;
+const mainStore = useMainStore();
 
 const post = ref<PostModel>();
 
 onMounted(async () => {
-  await auth.setup();
-
-  const _post = await api.get_post(id.value);
-  post.value = _post;
+  post.value = await mainStore.getPost(id.value);
 });
 </script>
 
 <template>
-  <main :class="`theme-${settings.theme}`">
+  <main :class="`theme-${mainStore.settings.theme}`">
     <MainLayout>
       <Post v-if="post" :post="post" />
     </MainLayout>

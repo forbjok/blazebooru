@@ -1,25 +1,20 @@
 <script setup lang="ts">
-import { inject, onMounted } from "vue";
 import { useRouter } from "vue-router";
 
 import MainLayout from "@/components/MainLayout.vue";
 import LoginForm from "../components/LoginForm.vue";
 
-import type { Settings } from "@/models/settings";
 import type { LoginRequest } from "@/models/api/login";
-import type { BlazeBooruAuthService } from "@/services/auth";
+import { useAuthStore } from "@/stores/auth";
+import { useMainStore } from "@/stores/main";
 
 const router = useRouter();
 
-const auth = inject<BlazeBooruAuthService>("auth")!;
-const settings = inject<Settings>("settings")!;
-
-onMounted(async () => {
-  await auth.setup();
-});
+const authStore = useAuthStore();
+const mainStore = useMainStore();
 
 const login = async (request: LoginRequest) => {
-  const success = await auth.login(request);
+  const success = await authStore.login(request);
   if (success) {
     router.push({ name: "posts" });
   }
@@ -27,7 +22,7 @@ const login = async (request: LoginRequest) => {
 </script>
 
 <template>
-  <main :class="`theme-${settings.theme}`">
+  <main :class="`theme-${mainStore.settings.theme}`">
     <MainLayout>
       <div class="content">
         <div class="title">Login</div>

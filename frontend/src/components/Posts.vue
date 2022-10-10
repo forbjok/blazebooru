@@ -1,22 +1,21 @@
 <script setup lang="ts">
-import { inject, toRefs } from "vue";
+import { toRefs } from "vue";
 
 import type { Post } from "@/models/api/post";
-import type { PathService } from "@/services/path";
+
+import { make_thumbnail_path } from "@/utils/path";
 
 const props = defineProps<{
   posts: Post[];
 }>();
 
 const { posts } = toRefs(props);
-
-const path = inject<PathService>("path")!;
 </script>
 
 <template>
   <div class="posts">
     <a v-for="p in posts" :key="p.id" :href="`/post/${p.id}`" :title="p.title" class="post">
-      <img :src="path.make_thumbnail_path(p)" />
+      <img :src="make_thumbnail_path(p)" />
     </a>
   </div>
 </template>

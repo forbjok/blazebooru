@@ -1,12 +1,10 @@
 <script setup lang="ts">
-import { inject } from "vue";
+import { useAuthStore } from "@/stores/auth";
 
-import type { BlazeBooruAuthService } from "@/services/auth";
-
-const auth = inject<BlazeBooruAuthService>("auth")!;
+const authStore = useAuthStore();
 
 const logout = async () => {
-  await auth.logout();
+  await authStore.logout();
 };
 </script>
 
@@ -16,15 +14,15 @@ const logout = async () => {
       <span class="powered-by">Powered by BlazeBooru</span>
       <span class="nav">
         <span class="posts"> [ <router-link :to="{ name: 'posts' }">Posts</router-link> ] </span>
-        <span v-if="auth.isAuthorized.value" class="upload">
+        <span v-if="authStore.isAuthorized" class="upload">
           [ <router-link :to="{ name: 'upload' }">Upload</router-link> ]
         </span>
       </span>
-      <span v-if="auth.isAuthorized.value" class="user-authorized">
-        <span class="username"><i class="fa-solid fa-user"></i> {{ auth.userProfile.value?.name }}</span>
+      <span v-if="authStore.isAuthorized" class="user-authorized">
+        <span class="username"><i class="fa-solid fa-user"></i> {{ authStore.userProfile?.name }}</span>
         <span class="logout"> [ <button class="link-button" @click="logout">Log out</button> ] </span>
       </span>
-      <span v-if="!auth.isAuthorized.value" class="user-unauthorized">
+      <span v-if="!authStore.isAuthorized" class="user-unauthorized">
         <span class="login"> [ <router-link :to="{ name: 'login' }">Login</router-link> ] </span>
         <span class="register"> [ <router-link :to="{ name: 'register' }">Register</router-link> ] </span>
       </span>

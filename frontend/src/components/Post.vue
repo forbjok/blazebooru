@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { computed, inject, ref, toRefs } from "vue";
+import { computed, ref, toRefs } from "vue";
 
 import Tags from "@/components/Tags.vue";
 
 import type { Post } from "@/models/api/post";
-import type { PathService } from "@/services/path";
+
+import { make_image_path } from "@/utils/path";
 
 interface Props {
   post: Post;
@@ -14,10 +15,8 @@ const props = defineProps<Props>();
 
 const { post } = toRefs(props);
 
-const path = inject<PathService>("path")!;
-
 const expand_image = ref(false);
-const url = computed(() => path.make_image_path(post.value));
+const url = computed(() => make_image_path(post.value));
 </script>
 
 <template>

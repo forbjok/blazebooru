@@ -13,10 +13,12 @@
   "dependencies": {
     "@fortawesome/fontawesome-free": "^6.2.0",
     "@fortawesome/free-solid-svg-icons": "^6.2.0",
+    "@vueuse/core": "^9.3.0",
     "axios": "^1.1.2",
     "date-fns": "^2.29.3",
     "filesize": "^10.0.5",
     "parsimmon": "^1.18.1",
+    "pinia": "^2.0.23",
     "ress": "^5.0.2",
     "sass": "^1.55.0",
     "vue": "^3.2.40",

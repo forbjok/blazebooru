@@ -1,21 +1,21 @@
 <script setup lang="ts">
-import { inject } from "vue";
 import { useRouter } from "vue-router";
 
 import MainLayout from "@/components/MainLayout.vue";
 import RegisterForm from "@/components/RegisterForm.vue";
 
-import type { Settings } from "@/models/settings";
+import { useAuthStore } from "@/stores/auth";
+import { useMainStore } from "@/stores/main";
+
 import type { LoginRequest } from "@/models/api/login";
-import type { BlazeBooruAuthService } from "@/services/auth";
+
+const authStore = useAuthStore();
+const mainStore = useMainStore();
 
 const router = useRouter();
 
-const auth = inject<BlazeBooruAuthService>("auth")!;
-const settings = inject<Settings>("settings")!;
-
 const register = async (request: LoginRequest) => {
-  const success = await auth.register(request);
+  const success = await authStore.register(request);
   if (success) {
     router.push({ name: "posts" });
   }
@@ -23,7 +23,7 @@ const register = async (request: LoginRequest) => {
 </script>
 
 <template>
-  <main :class="`theme-${settings.theme}`">
+  <main :class="`theme-${mainStore.settings.theme}`">
     <MainLayout>
       <div class="content">
         <div class="title">Register</div>

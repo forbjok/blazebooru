@@ -1,110 +1,40 @@
 <script setup lang="ts">
-import { computed, inject, onMounted, ref } from "vue";
+import { onMounted } from "vue";
 
 import MainLayout from "@/components/MainLayout.vue";
 import Posts from "@/components/Posts.vue";
-
-import type { BlazeBooruApiService } from "@/services/api";
-import type { Settings } from "@/models/settings";
-import type { Post } from "@/models/api/post";
-import type { BlazeBooruAuthService } from "@/services/auth";
 import SearchPanel from "../components/SearchPanel.vue";
 
-interface SearchCriteria {
-  tags: string[];
-  exclude_tags: string[];
-}
+import { useMainStore } from "@/stores/main";
 
-const POSTS_PER_PAGE = 50;
-const PAGES_SHOWN = 13;
-const HALF_PAGES_SHOWN = Math.floor(PAGES_SHOWN / 2);
-
-const api = inject<BlazeBooruApiService>("api")!;
-const auth = inject<BlazeBooruAuthService>("auth")!;
-const settings = inject<Settings>("settings")!;
-
-const posts = ref<Post[]>();
-const current_page = ref<number>(0);
-const current_search = ref<SearchCriteria>({ tags: [], exclude_tags: [] });
-const current_search_post_count = ref<number>(0);
-
-const page_count = computed(() => Math.ceil((current_search_post_count.value ?? 0) / POSTS_PER_PAGE));
-const pages = computed(() => {
-  const pages: number[] = [];
-
-  let first_page = Math.max(0, current_page.value - HALF_PAGES_SHOWN);
-  let last_page = Math.min(page_count.value, current_page.value + HALF_PAGES_SHOWN);
-
-  const page_diff = last_page - first_page;
-  if (page_diff < PAGES_SHOWN) {
-    if (first_page === 0) {
-      last_page = Math.min(page_count.value, last_page + (PAGES_SHOWN - page_diff));
-    } else {
-      first_page = Math.max(0, first_page - (PAGES_SHOWN - page_diff));
-    }
-  }
-
-  for (let i = first_page; i < last_page; ++i) {
-    pages.push(i);
-  }
-
-  return pages;
-});
+const mainStore = useMainStore();
 
 onMounted(async () => {
-  await auth.setup();
-
-  searchPosts([], []);
+  await mainStore.initializePosts();
 });
-
-const loadPosts = async (offset: number) => {
-  const _posts = await api.search_posts(
-    current_search.value.tags,
-    current_search.value.exclude_tags,
-    offset,
-    POSTS_PER_PAGE
-  );
-  posts.value = _posts;
-};
-
-const loadPage = async (page: number) => {
-  const offset = page * POSTS_PER_PAGE;
-  await loadPosts(offset);
-
-  current_page.value = page;
-};
-
-const searchPosts = async (tags: string[], exclude_tags: string[]) => {
-  current_search.value = { tags, exclude_tags };
-
-  const count = await api.search_posts_count(tags, exclude_tags);
-  current_search_post_count.value = count;
-
-  await loadPage(0);
-};
 </script>
 
 <template>
-  <main :class="`theme-${settings.theme}`">
+  <main :class="`theme-${mainStore.settings.theme}`">
     <MainLayout>
       <div class="layout">
-        <SearchPanel class="side-panel" @search="searchPosts" />
+        <SearchPanel class="side-panel" @search="mainStore.searchPosts" />
         <div class="content">
-          <Posts v-if="posts" :posts="posts" />
-          <div v-if="page_count > 1" class="pages">
-            <button class="page first link-button" title="First page" @click="loadPage(0)">&lt;&lt;</button>
+          <Posts v-if="mainStore.posts" :posts="mainStore.posts" />
+          <div v-if="mainStore.pageCount > 1" class="pages">
+            <button class="page first link-button" title="First page" @click="mainStore.loadPage(0)">&lt;&lt;</button>
             [
             <button
-              v-for="p in pages"
+              v-for="p in mainStore.pages"
               :key="p"
               class="page link-button"
-              :class="{ current: p === current_page }"
-              @click="loadPage(p)"
+              :class="{ current: p === mainStore.currentPage }"
+              @click="mainStore.loadPage(p)"
             >
               {{ p + 1 }}
             </button>
             ]
-            <button class="page last link-button" title="Last page" @click="loadPage(page_count - 1)">>></button>
+            <button class="page last link-button" title="Last page" @click="mainStore.loadLastPage()">>></button>
           </div>
         </div>
       </div>
