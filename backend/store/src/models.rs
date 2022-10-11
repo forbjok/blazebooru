@@ -48,6 +48,19 @@ pub struct NewPost {
 }
 
 #[derive(Debug, sqlx::Type)]
+#[sqlx(type_name = "update_post")]
+pub struct UpdatePost {
+    pub id: Option<i32>,
+
+    pub title: Option<String>,
+    pub description: Option<String>,
+    pub source: Option<String>,
+
+    pub add_tags: Vec<String>,
+    pub remove_tags: Vec<String>,
+}
+
+#[derive(Debug, sqlx::Type)]
 #[sqlx(type_name = "new_user")]
 pub struct NewUser {
     pub name: Option<String>,
@@ -59,6 +72,7 @@ pub struct NewUser {
 pub struct ViewPost {
     pub id: Option<i32>,
     pub created_at: Option<DateTime<Utc>>,
+    pub user_id: Option<i32>,
     pub user_name: Option<String>,
     pub title: Option<String>,
     pub description: Option<String>,

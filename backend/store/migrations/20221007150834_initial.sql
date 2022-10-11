@@ -159,6 +159,16 @@ CREATE TYPE new_post AS (
   tn_ext text
 );
 
+CREATE TYPE update_post AS (
+  id integer,
+
+  title text,
+  description text,
+  source text,
+  add_tags text[],
+  remove_tags text[]
+);
+
 CREATE TYPE new_user AS (
   name text,
   password_hash text
@@ -178,6 +188,7 @@ AS
 SELECT
   p.id,
   p.created_at,
+  p.user_id,
   u.name AS user_name,
   p.title,
   p.description,
@@ -331,6 +342,37 @@ BEGIN
   PERFORM update_post_tags(v_post_id, p_tags, '{}');
 
   RETURN v_post_id;
+END;
+$BODY$;
+
+-- Create update_post function
+CREATE FUNCTION update_post(
+  IN p_update_post update_post,
+  IN p_user_id integer
+)
+RETURNS boolean
+LANGUAGE plpgsql
+
+AS $BODY$
+DECLARE
+  v_success boolean;
+BEGIN
+  -- Update post
+  UPDATE post
+  SET
+    title = p_update_post.title,
+    description = p_update_post.description,
+    source = p_update_post.source
+  WHERE id = p_update_post.id
+    AND user_id = p_user_id
+  RETURNING true INTO v_success;
+
+  IF v_success THEN
+    -- Update post tags
+    PERFORM update_post_tags(p_update_post.id, p_update_post.add_tags, p_update_post.remove_tags);
+  END IF;
+
+  RETURN COALESCE(v_success, false);
 END;
 $BODY$;
 

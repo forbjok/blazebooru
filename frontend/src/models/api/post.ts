@@ -6,6 +6,7 @@ export interface PageInfo {
 export interface Post {
   id: number;
   created_at: string;
+  user_id: number;
   user_name: string;
   title?: string;
   description?: string;
@@ -25,4 +26,12 @@ export interface PostInfo {
   description?: string;
   source?: string;
   tags: string[];
+}
+
+export interface UpdatePost {
+  title?: string;
+  description?: string;
+  source?: string;
+  add_tags: string[];
+  remove_tags: string[];
 }

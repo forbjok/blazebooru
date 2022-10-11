@@ -22,6 +22,20 @@ impl PgStore {
         Ok(new_post_id.unwrap())
     }
 
+    pub async fn update_post(
+        &self,
+        post: &dbm::UpdatePost,
+        user_id: i32,
+    ) -> Result<bool, StoreError> {
+        let success =
+            sqlx::query_scalar_unchecked!(r#"SELECT update_post($1, $2);"#, post, user_id)
+                .fetch_one(&self.pool)
+                .await
+                .context("Error updating post in database")?;
+
+        Ok(success.unwrap())
+    }
+
     pub async fn get_view_post(&self, id: i32) -> Result<Option<dbm::ViewPost>, StoreError> {
         let post = sqlx::query_as_unchecked!(
             dbm::ViewPost,

@@ -4,6 +4,7 @@ use blazebooru_models::local as lm;
 use blazebooru_models::view as vm;
 use blazebooru_store::models as dbm;
 
+use blazebooru_store::transform::dbm_update_post_from_vm;
 use image::GenericImageView;
 
 use crate::image::ProcessImageResult;
@@ -72,6 +73,18 @@ impl BlazeBooruCore {
         let post = self.store.get_view_post(id).await?.map(vm::Post::from);
 
         Ok(post)
+    }
+
+    pub async fn update_post(
+        &self,
+        id: i32,
+        request: vm::UpdatePost,
+        user_id: i32,
+    ) -> Result<bool, anyhow::Error> {
+        let update_post = dbm_update_post_from_vm(id, request);
+        let success = self.store.update_post(&update_post, user_id).await?;
+
+        Ok(success)
     }
 
     pub async fn get_view_posts(

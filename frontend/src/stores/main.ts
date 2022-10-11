@@ -5,7 +5,7 @@ import axios from "axios";
 
 import { useAuthStore } from "./auth";
 
-import type { PageInfo, Post, PostInfo } from "@/models/api/post";
+import type { PageInfo, Post, PostInfo, UpdatePost } from "@/models/api/post";
 import { DEFAULT_SETTINGS, type Settings } from "@/models/settings";
 
 export interface Search {
@@ -134,6 +134,14 @@ export const useMainStore = defineStore("main", () => {
     return res.data;
   }
 
+  async function updatePost(id: number, update_post: UpdatePost) {
+    await axios.post<Post>(`/api/post/${id}/update`, update_post, {
+      headers: await authStore.getAuthHeaders(),
+    });
+
+    return true;
+  }
+
   async function loadPosts(start_id: number) {
     const search = activeSearch.value;
     if (!search) {
@@ -236,5 +244,6 @@ export const useMainStore = defineStore("main", () => {
     loadLastPage,
     searchPosts,
     uploadPost,
+    updatePost,
   };
 });

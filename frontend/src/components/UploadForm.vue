@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed, reactive, toRefs } from "vue";
-
 import { filesize } from "filesize";
 
-import type { PostInfo } from "@/models/api/post";
 import TagsEditor from "./TagsEditor.vue";
+
+import type { PostInfo } from "@/models/api/post";
 
 interface Props {
   disabled?: boolean;

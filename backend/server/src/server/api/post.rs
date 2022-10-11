@@ -6,8 +6,7 @@ use axum::extract::Multipart;
 use axum::extract::Path;
 use axum::extract::Query;
 use axum::extract::State;
-use axum::routing::get;
-use axum::routing::post;
+use axum::routing::{get, post};
 use axum::Json;
 use axum::Router;
 use serde::Deserialize;
@@ -72,6 +71,7 @@ pub fn router(server: Arc<BlazeBooruServer>) -> Router<Arc<BlazeBooruServer>> {
     Router::with_state(server)
         .route("/", get(get_view_posts))
         .route("/:id", get(get_view_post))
+        .route("/:id/update", post(update_post))
         .route("/pages", get(calculate_pages))
         .route("/pages/last", get(calculate_last_page))
         .route("/upload", post(upload_post))
@@ -89,6 +89,26 @@ async fn get_view_post(
         .context("Error getting thread")?;
 
     Ok(Json(post.ok_or(ApiError::NotFound)?))
+}
+
+#[axum::debug_handler(state = Arc<BlazeBooruServer>)]
+async fn update_post(
+    State(server): State<Arc<BlazeBooruServer>>,
+    auth: Authorized,
+    Path(id): Path<i32>,
+    Json(req): Json<vm::UpdatePost>,
+) -> Result<(), ApiError> {
+    let post = server
+        .core
+        .update_post(id, req, auth.claims.user_id)
+        .await
+        .context("Error getting thread")?;
+
+    if !post {
+        return Err(ApiError::NotFound);
+    }
+
+    Ok(())
 }
 
 #[axum::debug_handler(state = Arc<BlazeBooruServer>)]

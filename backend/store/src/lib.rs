@@ -1,5 +1,5 @@
 pub mod models;
 mod store;
-mod transform;
+pub mod transform;
 
 pub use store::*;

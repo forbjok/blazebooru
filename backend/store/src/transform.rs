@@ -38,6 +38,7 @@ impl From<dbm::ViewPost> for vm::Post {
         vm::Post {
             id: p.id.unwrap(),
             created_at: p.created_at.unwrap(),
+            user_id: p.user_id.unwrap(),
             user_name: p.user_name.unwrap(),
             title: p.title,
             description: p.description,
@@ -69,5 +70,16 @@ impl From<vm::PageInfo> for dbm::PageInfo {
             no: Some(p.no),
             start_id: Some(p.start_id),
         }
+    }
+}
+
+pub fn dbm_update_post_from_vm(id: i32, p: vm::UpdatePost) -> dbm::UpdatePost {
+    dbm::UpdatePost {
+        id: Some(id),
+        title: p.title,
+        description: p.description,
+        source: p.source,
+        add_tags: p.add_tags,
+        remove_tags: p.remove_tags,
     }
 }
