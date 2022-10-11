@@ -59,6 +59,10 @@
                     "Text"
                   ],
                   [
+                    "source",
+                    "Text"
+                  ],
+                  [
                     "filename",
                     "Text"
                   ],
@@ -96,6 +100,59 @@
       }
     },
     "query": "SELECT create_post($1, $2);"
+  },
+  "4ee07d0599634c6713a771b51abc205c6e6a6963bfbfb5677ccdbf0acc040efd": {
+    "describe": {
+      "columns": [
+        {
+          "name": "update_post",
+          "ordinal": 0,
+          "type_info": "Bool"
+        }
+      ],
+      "nullable": [
+        null
+      ],
+      "parameters": {
+        "Left": [
+          {
+            "Custom": {
+              "kind": {
+                "Composite": [
+                  [
+                    "id",
+                    "Int4"
+                  ],
+                  [
+                    "title",
+                    "Text"
+                  ],
+                  [
+                    "description",
+                    "Text"
+                  ],
+                  [
+                    "source",
+                    "Text"
+                  ],
+                  [
+                    "add_tags",
+                    "TextArray"
+                  ],
+                  [
+                    "remove_tags",
+                    "TextArray"
+                  ]
+                ]
+              },
+              "name": "update_post"
+            }
+          },
+          "Int4"
+        ]
+      }
+    },
+    "query": "SELECT update_post($1, $2);"
   },
   "60052c09546b142087edbb8c7677a63a9567bbdc0ae3a6cb1626a3fd3b520c67": {
     "describe": {
@@ -175,43 +232,48 @@
           "type_info": "Text"
         },
         {
-          "name": "filename",
+          "name": "source",
           "ordinal": 6,
           "type_info": "Text"
         },
         {
-          "name": "size",
+          "name": "filename",
           "ordinal": 7,
-          "type_info": "Int4"
+          "type_info": "Text"
         },
         {
-          "name": "width",
+          "name": "size",
           "ordinal": 8,
           "type_info": "Int4"
         },
         {
-          "name": "height",
+          "name": "width",
           "ordinal": 9,
           "type_info": "Int4"
         },
         {
-          "name": "hash",
+          "name": "height",
           "ordinal": 10,
-          "type_info": "Text"
+          "type_info": "Int4"
         },
         {
-          "name": "ext",
+          "name": "hash",
           "ordinal": 11,
           "type_info": "Text"
         },
         {
-          "name": "tn_ext",
+          "name": "ext",
           "ordinal": 12,
           "type_info": "Text"
         },
         {
-          "name": "tags",
+          "name": "tn_ext",
           "ordinal": 13,
+          "type_info": "Text"
+        },
+        {
+          "name": "tags",
+          "ordinal": 14,
           "type_info": "TextArray"
         }
       ],
@@ -220,6 +282,7 @@
         false,
         false,
         false,
+        true,
         true,
         true,
         false,
@@ -238,32 +301,6 @@
       }
     },
     "query": "SELECT * FROM post WHERE id = $1;"
-  },
-  "8e134cc2443d2f1b51aaaad460aaa6ea2bfb2ea6b260b652a3015167bda4349e": {
-    "describe": {
-      "columns": [
-        {
-          "name": "token",
-          "ordinal": 0,
-          "type_info": "Uuid"
-        },
-        {
-          "name": "session",
-          "ordinal": 1,
-          "type_info": "Int8"
-        }
-      ],
-      "nullable": [
-        null,
-        null
-      ],
-      "parameters": {
-        "Left": [
-          "Text"
-        ]
-      }
-    },
-    "query": "SELECT * FROM create_refresh_token($1);"
   },
   "8fd00403c860ceadbab3e7d2b6bbf9a3d925f3663bc1644bfd27b7732b6ac639": {
     "describe": {
@@ -285,6 +322,33 @@
     },
     "query": "SELECT * FROM invalidate_session($1);"
   },
+  "ab1853bba8723f3c055f0fccd0c6065986d121d3be471479f9bd0ca0f9f5bff2": {
+    "describe": {
+      "columns": [
+        {
+          "name": "token",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "session",
+          "ordinal": 1,
+          "type_info": "Int8"
+        }
+      ],
+      "nullable": [
+        null,
+        null
+      ],
+      "parameters": {
+        "Left": [
+          "Int4",
+          "Inet"
+        ]
+      }
+    },
+    "query": "SELECT * FROM create_refresh_token($1, $2);"
+  },
   "acece9e51f9e06de1f82774c6325cff124bc60ae7a03ea4963c4a92e0d8f7334": {
     "describe": {
       "columns": [
@@ -299,62 +363,74 @@
           "type_info": "Timestamptz"
         },
         {
-          "name": "user_name",
+          "name": "user_id",
           "ordinal": 2,
-          "type_info": "Text"
+          "type_info": "Int4"
         },
         {
-          "name": "title",
+          "name": "user_name",
           "ordinal": 3,
           "type_info": "Text"
         },
         {
-          "name": "description",
+          "name": "title",
           "ordinal": 4,
           "type_info": "Text"
         },
         {
-          "name": "filename",
+          "name": "description",
           "ordinal": 5,
           "type_info": "Text"
         },
         {
-          "name": "size",
+          "name": "source",
           "ordinal": 6,
-          "type_info": "Int4"
+          "type_info": "Text"
         },
         {
-          "name": "width",
+          "name": "filename",
           "ordinal": 7,
-          "type_info": "Int4"
+          "type_info": "Text"
         },
         {
-          "name": "height",
+          "name": "size",
           "ordinal": 8,
           "type_info": "Int4"
         },
         {
-          "name": "hash",
+          "name": "width",
           "ordinal": 9,
-          "type_info": "Text"
+          "type_info": "Int4"
         },
         {
-          "name": "ext",
+          "name": "height",
           "ordinal": 10,
-          "type_info": "Text"
+          "type_info": "Int4"
         },
         {
-          "name": "tn_ext",
+          "name": "hash",
           "ordinal": 11,
           "type_info": "Text"
         },
         {
-          "name": "tags",
+          "name": "ext",
           "ordinal": 12,
+          "type_info": "Text"
+        },
+        {
+          "name": "tn_ext",
+          "ordinal": 13,
+          "type_info": "Text"
+        },
+        {
+          "name": "tags",
+          "ordinal": 14,
           "type_info": "TextArray"
         }
       ],
       "nullable": [
+        true,
+        true,
         true,
         true,
         true,
@@ -437,62 +513,74 @@
           "type_info": "Timestamptz"
         },
         {
-          "name": "user_name",
+          "name": "user_id",
           "ordinal": 2,
-          "type_info": "Text"
+          "type_info": "Int4"
         },
         {
-          "name": "title",
+          "name": "user_name",
           "ordinal": 3,
           "type_info": "Text"
         },
         {
-          "name": "description",
+          "name": "title",
           "ordinal": 4,
           "type_info": "Text"
         },
         {
-          "name": "filename",
+          "name": "description",
           "ordinal": 5,
           "type_info": "Text"
         },
         {
-          "name": "size",
+          "name": "source",
           "ordinal": 6,
-          "type_info": "Int4"
+          "type_info": "Text"
         },
         {
-          "name": "width",
+          "name": "filename",
           "ordinal": 7,
-          "type_info": "Int4"
+          "type_info": "Text"
         },
         {
-          "name": "height",
+          "name": "size",
           "ordinal": 8,
           "type_info": "Int4"
         },
         {
-          "name": "hash",
+          "name": "width",
           "ordinal": 9,
-          "type_info": "Text"
+          "type_info": "Int4"
         },
         {
-          "name": "ext",
+          "name": "height",
           "ordinal": 10,
-          "type_info": "Text"
+          "type_info": "Int4"
         },
         {
-          "name": "tn_ext",
+          "name": "hash",
           "ordinal": 11,
           "type_info": "Text"
         },
         {
-          "name": "tags",
+          "name": "ext",
           "ordinal": 12,
+          "type_info": "Text"
+        },
+        {
+          "name": "tn_ext",
+          "ordinal": 13,
+          "type_info": "Text"
+        },
+        {
+          "name": "tags",
+          "ordinal": 14,
           "type_info": "TextArray"
         }
       ],
       "nullable": [
+        null,
+        null,
         null,
         null,
         null,
@@ -624,6 +712,39 @@
     },
     "query": "SELECT * FROM unnest(calculate_pages($1, $2, $3, $4, $5));"
   },
+  "e4af9d0c63e079421590659adb9e8398fdec233c3f7cc7dd711d2e335beb93ee": {
+    "describe": {
+      "columns": [
+        {
+          "name": "token",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "session",
+          "ordinal": 1,
+          "type_info": "Int8"
+        },
+        {
+          "name": "user_id",
+          "ordinal": 2,
+          "type_info": "Int4"
+        }
+      ],
+      "nullable": [
+        null,
+        null,
+        null
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Inet"
+        ]
+      }
+    },
+    "query": "SELECT * FROM refresh_refresh_token($1, $2);"
+  },
   "f7f1ebf1bc873406e6c513e2a210de78ecf4986aae23c08fc846427ccc679a8b": {
     "describe": {
       "columns": [
@@ -667,37 +788,5 @@
       }
     },
     "query": "SELECT * FROM \"user\" WHERE name = $1;"
-  },
-  "f8b6abb5c443fa4397dcd17efb362ec70647d13f74596a8233d6a1b0a812119f": {
-    "describe": {
-      "columns": [
-        {
-          "name": "token",
-          "ordinal": 0,
-          "type_info": "Uuid"
-        },
-        {
-          "name": "session",
-          "ordinal": 1,
-          "type_info": "Int8"
-        },
-        {
-          "name": "claims",
-          "ordinal": 2,
-          "type_info": "Text"
-        }
-      ],
-      "nullable": [
-        null,
-        null,
-        null
-      ],
-      "parameters": {
-        "Left": [
-          "Uuid"
-        ]
-      }
-    },
-    "query": "SELECT * FROM refresh_refresh_token($1);"
   }
 }
