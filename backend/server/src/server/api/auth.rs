@@ -70,10 +70,7 @@ async fn login(
 }
 
 #[axum::debug_handler(state = Arc<BlazeBooruServer>)]
-async fn logout(
-    State(server): State<Arc<BlazeBooruServer>>,
-    auth: Authorized,
-) -> Result<(), ApiError> {
+async fn logout(State(server): State<Arc<BlazeBooruServer>>, auth: Authorized) -> Result<(), ApiError> {
     server.core.logout(auth.session).await?;
 
     Ok(())
@@ -89,10 +86,7 @@ async fn refresh(
         token: refresh_token,
         session,
         user_id,
-    }) = server
-        .core
-        .refresh_refresh_token(req.refresh_token, addr.ip())
-        .await?
+    }) = server.core.refresh_refresh_token(req.refresh_token, addr.ip()).await?
     {
         let claims = AuthClaims { user_id };
         let claims = SessionClaims { session, claims };

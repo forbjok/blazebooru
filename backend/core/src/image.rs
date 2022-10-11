@@ -57,11 +57,7 @@ impl BlazeBooruCore {
             {
                 use std::os::unix::fs::PermissionsExt;
 
-                tokio::fs::set_permissions(
-                    &original_image_path,
-                    std::fs::Permissions::from_mode(0o644),
-                )
-                .await?;
+                tokio::fs::set_permissions(&original_image_path, std::fs::Permissions::from_mode(0o644)).await?;
             }
         } else {
             // ... otherwise, delete it.

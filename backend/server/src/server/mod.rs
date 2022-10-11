@@ -45,10 +45,7 @@ impl BlazeBooruServer {
 
         let app = Router::new()
             .nest("/api", api)
-            .merge(axum_extra::routing::SpaRouter::new(
-                "/f",
-                &server.core.public_path,
-            ))
+            .merge(axum_extra::routing::SpaRouter::new("/f", &server.core.public_path))
             .layer(tower_http::trace::TraceLayer::new_for_http());
 
         let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
@@ -70,9 +67,7 @@ impl IntoResponse for ApiError {
                 error!("{err:#}");
                 (StatusCode::INTERNAL_SERVER_ERROR, format!("{err:#}")).into_response()
             }
-            Self::AuthError(AuthError::ExpiredToken) => {
-                (StatusCode::UNAUTHORIZED, ()).into_response()
-            }
+            Self::AuthError(AuthError::ExpiredToken) => (StatusCode::UNAUTHORIZED, ()).into_response(),
             Self::AuthError(err) => (StatusCode::BAD_REQUEST, format!("{err:#}")).into_response(),
             Self::BadRequest => (StatusCode::BAD_REQUEST, ()).into_response(),
             Self::NotFound => (StatusCode::NOT_FOUND, ()).into_response(),

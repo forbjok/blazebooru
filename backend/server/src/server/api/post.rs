@@ -82,11 +82,7 @@ async fn get_view_post(
     State(server): State<Arc<BlazeBooruServer>>,
     Path(id): Path<i32>,
 ) -> Result<Json<vm::Post>, ApiError> {
-    let post = server
-        .core
-        .get_view_post(id)
-        .await
-        .context("Error getting thread")?;
+    let post = server.core.get_view_post(id).await.context("Error getting thread")?;
 
     Ok(Json(post.ok_or(ApiError::NotFound)?))
 }
@@ -154,13 +150,7 @@ async fn calculate_pages(
 
     let pages = server
         .core
-        .calculate_pages(
-            include_tags,
-            exclude_tags,
-            posts_per_page,
-            page_count,
-            origin_page,
-        )
+        .calculate_pages(include_tags, exclude_tags, posts_per_page, page_count, origin_page)
         .await
         .context("Error getting posts pagination stats")?;
 
@@ -206,10 +196,7 @@ async fn upload_post(
 
         match field_name {
             "info" => {
-                let json = field
-                    .text()
-                    .await
-                    .map_err(|err| ApiError::Anyhow(err.into()))?;
+                let json = field.text().await.map_err(|err| ApiError::Anyhow(err.into()))?;
 
                 info = Some(serde_json::from_str(&json).context("Deserializing post info")?);
             }
@@ -238,11 +225,7 @@ async fn upload_post(
             tags: info.tags.iter().map(|t| t.as_str()).collect(),
         };
 
-        let new_post_id = server
-            .core
-            .create_post(new_post)
-            .await
-            .context("Error creating post")?;
+        let new_post_id = server.core.create_post(new_post).await.context("Error creating post")?;
 
         Ok(Json(new_post_id))
     } else {

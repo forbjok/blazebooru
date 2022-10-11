@@ -31,8 +31,7 @@ async fn main() -> Result<(), anyhow::Error> {
 
     dotenv::dotenv().ok();
 
-    let jwt_secret =
-        env::var("BLAZEBOORU_JWT_SECRET").context("BLAZEBOORU_JWT_SECRET is not set")?;
+    let jwt_secret = env::var("BLAZEBOORU_JWT_SECRET").context("BLAZEBOORU_JWT_SECRET is not set")?;
 
     let auth = BlazeBooruAuth::new(jwt_secret.as_bytes());
     let core = BlazeBooruCore::new()?;
@@ -45,9 +44,7 @@ async fn main() -> Result<(), anyhow::Error> {
     let server = BlazeBooruServer::new(auth, core).context("Error creating server")?;
 
     let shutdown = || async {
-        tokio::signal::ctrl_c()
-            .await
-            .expect("Error awaiting Ctrl-C signal");
+        tokio::signal::ctrl_c().await.expect("Error awaiting Ctrl-C signal");
     };
 
     server.run_server(shutdown()).await?;
@@ -57,11 +54,8 @@ async fn main() -> Result<(), anyhow::Error> {
 
 fn initialize_logging() {
     let subscriber = FmtSubscriber::builder()
-        .with_env_filter(
-            EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info")),
-        )
+        .with_env_filter(EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info")))
         .finish();
 
-    tracing::subscriber::set_global_default(subscriber)
-        .expect("Setting default tracing subscriber failed!");
+    tracing::subscriber::set_global_default(subscriber).expect("Setting default tracing subscriber failed!");
 }

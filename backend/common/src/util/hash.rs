@@ -14,10 +14,7 @@ pub struct HashResult {
 }
 
 /// Read bytes from Bytes, calculate hash and write to a file
-pub async fn hash_blake3_to_file_from_bytes(
-    bytes: Bytes,
-    path: &Path,
-) -> Result<HashResult, anyhow::Error> {
+pub async fn hash_blake3_to_file_from_bytes(bytes: Bytes, path: &Path) -> Result<HashResult, anyhow::Error> {
     let mut file = fs::File::create(path)
         .await
         .with_context(|| format!("Opening file for writing: {}", path.display()))?;

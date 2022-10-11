@@ -9,20 +9,12 @@ use blazebooru_models::local as lm;
 use super::BlazeBooruCore;
 
 impl BlazeBooruCore {
-    pub async fn login(
-        &self,
-        user_name: &str,
-        password: &str,
-    ) -> Result<Option<lm::User>, anyhow::Error> {
+    pub async fn login(&self, user_name: &str, password: &str) -> Result<Option<lm::User>, anyhow::Error> {
         if let Some(user) = self.store.get_user_by_name(user_name).await? {
-            let password_hash =
-                PasswordHash::new(&user.password_hash).map_err(|err| anyhow!("{err}"))?;
+            let password_hash = PasswordHash::new(&user.password_hash).map_err(|err| anyhow!("{err}"))?;
 
             let argon2 = Argon2::default();
-            if argon2
-                .verify_password(password.as_bytes(), &password_hash)
-                .is_ok()
-            {
+            if argon2.verify_password(password.as_bytes(), &password_hash).is_ok() {
                 Ok(Some(lm::User::from(user)))
             } else {
                 Ok(None)

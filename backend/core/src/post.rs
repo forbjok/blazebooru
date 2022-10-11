@@ -45,9 +45,7 @@ impl BlazeBooruCore {
                 img
             };
 
-            tn_img
-                .save(&thumbnail_path)
-                .context("Error saving thumbnail")?;
+            tn_img.save(&thumbnail_path).context("Error saving thumbnail")?;
         }
 
         let db_post = dbm::NewPost {
@@ -75,12 +73,7 @@ impl BlazeBooruCore {
         Ok(post)
     }
 
-    pub async fn update_post(
-        &self,
-        id: i32,
-        request: vm::UpdatePost,
-        user_id: i32,
-    ) -> Result<bool, anyhow::Error> {
+    pub async fn update_post(&self, id: i32, request: vm::UpdatePost, user_id: i32) -> Result<bool, anyhow::Error> {
         let update_post = dbm_update_post_from_vm(id, request);
         let success = self.store.update_post(&update_post, user_id).await?;
 

@@ -51,15 +51,11 @@ impl IntoResponse for AuthError {
 impl FromRequestParts<Arc<BlazeBooruServer>> for Authorized {
     type Rejection = AuthError;
 
-    async fn from_request_parts(
-        parts: &mut Parts,
-        state: &Arc<BlazeBooruServer>,
-    ) -> Result<Self, Self::Rejection> {
+    async fn from_request_parts(parts: &mut Parts, state: &Arc<BlazeBooruServer>) -> Result<Self, Self::Rejection> {
         // Extract the token from the authorization header
-        let TypedHeader(Authorization(bearer)) =
-            TypedHeader::<Authorization<Bearer>>::from_request_parts(parts, state)
-                .await
-                .map_err(|_| AuthError::InvalidToken)?;
+        let TypedHeader(Authorization(bearer)) = TypedHeader::<Authorization<Bearer>>::from_request_parts(parts, state)
+            .await
+            .map_err(|_| AuthError::InvalidToken)?;
 
         let token = bearer.token();
 
