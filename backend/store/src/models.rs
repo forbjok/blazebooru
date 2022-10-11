@@ -89,5 +89,5 @@ pub struct CreateRefreshTokenResult {
 pub struct RefreshRefreshTokenResult {
     pub token: Option<Uuid>,
     pub session: Option<i64>,
-    pub claims: Option<String>,
+    pub user_id: Option<i32>,
 }

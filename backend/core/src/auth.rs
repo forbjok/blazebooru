@@ -1,6 +1,7 @@
+use std::net::IpAddr;
+
 use anyhow::anyhow;
 use argon2::{Argon2, PasswordHash, PasswordVerifier};
-use serde::{de::DeserializeOwned, Serialize};
 use uuid::Uuid;
 
 use blazebooru_models::local as lm;
@@ -35,27 +36,27 @@ impl BlazeBooruCore {
         self.store.invalidate_session(session).await
     }
 
-    pub async fn create_refresh_token<T: Serialize>(
+    pub async fn create_refresh_token(
         &self,
-        claims: &T,
+        user_id: i32,
+        ip: IpAddr,
     ) -> Result<lm::CreateRefreshTokenResult, anyhow::Error> {
-        let json = serde_json::to_string(claims)?;
-
         Ok(lm::CreateRefreshTokenResult::from(
-            self.store.create_refresh_token(&json).await?,
+            self.store.create_refresh_token(user_id, ip).await?,
         ))
     }
 
-    pub async fn refresh_refresh_token<T: DeserializeOwned>(
+    pub async fn refresh_refresh_token(
         &self,
         token: Uuid,
-    ) -> Result<Option<lm::RefreshRefreshTokenResult<T>>, anyhow::Error> {
-        let r = self.store.refresh_refresh_token(token).await?;
-        if let (Some(token), Some(session), Some(claims)) = (r.token, r.session, r.claims) {
+        ip: IpAddr,
+    ) -> Result<Option<lm::RefreshRefreshTokenResult>, anyhow::Error> {
+        let r = self.store.refresh_refresh_token(token, ip).await?;
+        if let (Some(token), Some(session), Some(user_id)) = (r.token, r.session, r.user_id) {
             Ok(Some(lm::RefreshRefreshTokenResult {
                 token,
                 session,
-                claims: serde_json::from_str(&claims)?,
+                user_id,
             }))
         } else {
             Ok(None)

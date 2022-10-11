@@ -1,6 +1,7 @@
+use std::net::SocketAddr;
 use std::sync::Arc;
 
-use axum::extract::State;
+use axum::extract::{ConnectInfo, State};
 use axum::routing::post;
 use axum::{Json, Router};
 use serde::{Deserialize, Serialize};
@@ -40,17 +41,18 @@ pub fn router(server: Arc<BlazeBooruServer>) -> Router<Arc<BlazeBooruServer>> {
 #[axum::debug_handler(state = Arc<BlazeBooruServer>)]
 async fn login(
     State(server): State<Arc<BlazeBooruServer>>,
+    ConnectInfo(addr): ConnectInfo<SocketAddr>,
     Json(req): Json<LoginRequest>,
 ) -> Result<Json<LoginResponse>, ApiError> {
     let user = server.core.login(&req.name, &req.password).await?;
 
     if let Some(user) = user {
-        let claims = AuthClaims { user_id: user.id };
-
         let lm::CreateRefreshTokenResult {
             token: refresh_token,
             session,
-        } = server.core.create_refresh_token(&claims).await?;
+        } = server.core.create_refresh_token(user.id, addr.ip()).await?;
+
+        let claims = AuthClaims { user_id: user.id };
         let claims = SessionClaims { session, claims };
 
         let claims = JwtClaims::short(claims);
@@ -80,17 +82,19 @@ async fn logout(
 #[axum::debug_handler(state = Arc<BlazeBooruServer>)]
 async fn refresh(
     State(server): State<Arc<BlazeBooruServer>>,
+    ConnectInfo(addr): ConnectInfo<SocketAddr>,
     Json(req): Json<RefreshRequest>,
 ) -> Result<Json<LoginResponse>, ApiError> {
     if let Some(lm::RefreshRefreshTokenResult {
         token: refresh_token,
         session,
-        claims,
+        user_id,
     }) = server
         .core
-        .refresh_refresh_token::<AuthClaims>(req.refresh_token)
+        .refresh_refresh_token(req.refresh_token, addr.ip())
         .await?
     {
+        let claims = AuthClaims { user_id };
         let claims = SessionClaims { session, claims };
 
         let claims = JwtClaims::short(claims);

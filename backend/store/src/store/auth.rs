@@ -1,3 +1,5 @@
+use std::net::IpAddr;
+
 use anyhow::Context;
 use uuid::Uuid;
 
@@ -9,12 +11,14 @@ use crate::{
 impl PgStore {
     pub async fn create_refresh_token(
         &self,
-        claims: &str,
+        user_id: i32,
+        ip: IpAddr,
     ) -> Result<CreateRefreshTokenResult, anyhow::Error> {
         let token = sqlx::query_as_unchecked!(
             CreateRefreshTokenResult,
-            r#"SELECT * FROM create_refresh_token($1);"#,
-            claims
+            r#"SELECT * FROM create_refresh_token($1, $2);"#,
+            user_id,
+            ip
         )
         .fetch_one(&self.pool)
         .await
@@ -39,11 +43,13 @@ impl PgStore {
     pub async fn refresh_refresh_token(
         &self,
         token: Uuid,
+        ip: IpAddr,
     ) -> Result<RefreshRefreshTokenResult, anyhow::Error> {
         let result = sqlx::query_as_unchecked!(
             RefreshRefreshTokenResult,
-            r#"SELECT * FROM refresh_refresh_token($1);"#,
-            token
+            r#"SELECT * FROM refresh_refresh_token($1, $2);"#,
+            token,
+            ip
         )
         .fetch_optional(&self.pool)
         .await?

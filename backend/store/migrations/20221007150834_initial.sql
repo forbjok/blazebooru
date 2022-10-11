@@ -32,6 +32,7 @@ CREATE TABLE "user"
   updated_at timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
   name text NOT NULL,
   password_hash text NOT NULL,
+
   PRIMARY KEY (id),
   UNIQUE (name)
 );
@@ -55,7 +56,9 @@ CREATE TABLE post
   ext text NOT NULL,
   tn_ext text NOT NULL,
   tags text[] NOT NULL DEFAULT '{}',
+
   PRIMARY KEY (id),
+
   FOREIGN KEY (user_id)
     REFERENCES "user" (id) MATCH SIMPLE
     ON UPDATE NO ACTION
@@ -72,6 +75,7 @@ CREATE TABLE tag
   created_at timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
   tag text NOT NULL,
+
   PRIMARY KEY (id),
   UNIQUE (tag)
 );
@@ -84,12 +88,15 @@ CREATE TABLE post_tag
   created_at timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
   post_id integer NOT NULL,
   tag_id integer NOT NULL,
+
   PRIMARY KEY (post_id, tag_id),
+
   FOREIGN KEY (post_id)
     REFERENCES post (id) MATCH SIMPLE
     ON UPDATE NO ACTION
     ON DELETE CASCADE
     NOT VALID,
+
   FOREIGN KEY (tag_id)
     REFERENCES tag (id) MATCH SIMPLE
     ON UPDATE NO ACTION
@@ -106,9 +113,13 @@ CREATE TABLE refresh_token
 
   token uuid NOT NULL DEFAULT gen_random_uuid(),
   session bigint NOT NULL,
-  used boolean NOT NULL DEFAULT false,
+  user_id integer NOT NULL,
+  created_ip inet NOT NULL,
   expires_at timestamp with time zone NOT NULL DEFAULT (CURRENT_TIMESTAMP + '30 days'::interval),
-  claims text NOT NULL,
+
+  used boolean NOT NULL DEFAULT false,
+  used_ip inet,
+
   PRIMARY KEY (id),
   UNIQUE (token)
 );
@@ -153,7 +164,7 @@ CREATE TYPE new_user AS (
 
 CREATE TYPE create_refresh_token_result AS (token uuid, session bigint);
 
-CREATE TYPE refresh_refresh_token_result AS (token uuid, session bigint, claims text);
+CREATE TYPE refresh_refresh_token_result AS (token uuid, session bigint, user_id integer);
 
 CREATE TYPE page_info AS (no integer, start_id integer);
 
@@ -317,8 +328,6 @@ BEGIN
   RETURN v_post_id;
 END;
 $BODY$;
-
-
 
 -- Create filter_tags function
 CREATE FUNCTION filter_tags(
@@ -545,7 +554,8 @@ END;
 $BODY$;
 
 CREATE FUNCTION create_refresh_token(
-  IN p_claims text
+  IN p_user_id integer,
+  IN p_ip inet
 )
 RETURNS create_refresh_token_result
 LANGUAGE plpgsql
@@ -558,8 +568,8 @@ BEGIN
   v_session := nextval('refresh_token_session_seq');
 
   -- Generate new refresh token with new session
-  INSERT INTO refresh_token (session, claims)
-  VALUES (v_session, p_claims)
+  INSERT INTO refresh_token (session, user_id, created_ip)
+  VALUES (v_session, p_user_id, p_ip)
   RETURNING token INTO v_new_token;
 
   -- Return new token
@@ -584,7 +594,8 @@ $BODY$;
 
 -- Create refresh_refresh_token function
 CREATE FUNCTION refresh_refresh_token(
-  IN p_token uuid
+  IN p_token uuid,
+  IN p_ip inet
 )
 RETURNS refresh_refresh_token_result
 LANGUAGE plpgsql
@@ -605,7 +616,7 @@ BEGIN
 
   -- Check if already used
   IF v_refresh_token.used THEN
-    SELECT invalidate_session(v_refresh_token.session);
+    PERFORM invalidate_session(v_refresh_token.session);
     RETURN NULL;
   END IF;
 
@@ -616,13 +627,13 @@ BEGIN
 
   -- Mark token as used
   UPDATE refresh_token
-  SET used = true
+  SET used = true, used_ip = p_ip
   WHERE id = v_refresh_token.id;
 
   -- Generate new refresh token
-  INSERT INTO refresh_token (session, claims)
-  VALUES (v_refresh_token.session, v_refresh_token.claims)
-  RETURNING token, session, claims INTO v_result;
+  INSERT INTO refresh_token (session, user_id, created_ip)
+  VALUES (v_refresh_token.session, v_refresh_token.user_id, p_ip)
+  RETURNING token, session, user_id INTO v_result;
 
   -- Return result
   RETURN v_result;

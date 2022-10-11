@@ -12,7 +12,7 @@ anyhow = "1.0.65"
 chrono = "0.4.22"
 serde = "1.0.145"
 serde_derive = "1.0.145"
-sqlx = { version = "0.6.2", features = ["chrono", "offline", "postgres", "runtime-tokio-rustls", "uuid"] }
+sqlx = { version = "0.6.2", features = ["chrono", "ipnetwork", "offline", "postgres", "runtime-tokio-rustls", "uuid"] }
 thiserror = "1.0.37"
 tokio = "1.21.2"
 tracing = "0.1.37"

@@ -58,8 +58,8 @@ pub struct CreateRefreshTokenResult {
 }
 
 #[derive(Debug)]
-pub struct RefreshRefreshTokenResult<C> {
+pub struct RefreshRefreshTokenResult {
     pub token: Uuid,
     pub session: i64,
-    pub claims: C,
+    pub user_id: i32,
 }

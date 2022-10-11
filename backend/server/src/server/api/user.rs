@@ -1,6 +1,7 @@
+use std::net::SocketAddr;
 use std::sync::Arc;
 
-use axum::extract::State;
+use axum::extract::{ConnectInfo, State};
 use axum::routing::{get, post};
 use axum::{Json, Router};
 use serde::Deserialize;
@@ -38,6 +39,7 @@ async fn get_user_profile(
 #[axum::debug_handler(state = Arc<BlazeBooruServer>)]
 async fn register_user(
     State(server): State<Arc<BlazeBooruServer>>,
+    ConnectInfo(addr): ConnectInfo<SocketAddr>,
     Json(req): Json<RegisterUserRequest>,
 ) -> Result<Json<LoginResponse>, ApiError> {
     let user = lm::NewUser {
@@ -52,7 +54,7 @@ async fn register_user(
     let lm::CreateRefreshTokenResult {
         token: refresh_token,
         session,
-    } = server.core.create_refresh_token(&claims).await?;
+    } = server.core.create_refresh_token(user_id, addr.ip()).await?;
     let claims = SessionClaims { session, claims };
 
     let claims = JwtClaims::short(claims);
