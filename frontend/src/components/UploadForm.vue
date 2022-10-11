@@ -13,6 +13,7 @@ interface Props {
 interface ViewModel {
   title: string;
   description: string;
+  source: string;
   tags: string[];
   file?: File;
 }
@@ -32,6 +33,7 @@ const { disabled } = toRefs(props);
 const vm = reactive<ViewModel>({
   title: "",
   description: "",
+  source: "",
   tags: [],
 });
 
@@ -82,6 +84,10 @@ const upload = () => {
     info.description = vm.description;
   }
 
+  if (vm.source) {
+    info.source = vm.source;
+  }
+
   emit("upload", info, vm.file);
 };
 </script>
@@ -90,6 +96,8 @@ const upload = () => {
   <form class="upload-form" @submit.prevent="upload">
     <label>Title</label>
     <input name="title" type="text" v-model="vm.title" placeholder="Title" title="Title" :disabled="disabled" />
+    <label>Source</label>
+    <input name="source" type="text" v-model="vm.source" placeholder="Source" title="Source" :disabled="disabled" />
 
     <label>Tags</label>
     <TagsEditor v-model="vm.tags" />

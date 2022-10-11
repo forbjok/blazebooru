@@ -48,6 +48,7 @@ CREATE TABLE post
   user_id integer NOT NULL,
   title text,
   description text,
+  source text,
   filename text NOT NULL,
   size integer NOT NULL,
   width integer NOT NULL,
@@ -148,6 +149,7 @@ CREATE TYPE new_post AS (
   user_id integer,
   title text,
   description text,
+  source text,
   filename text,
   size integer,
   width integer,
@@ -179,6 +181,7 @@ SELECT
   u.name AS user_name,
   p.title,
   p.description,
+  p.source,
   p.filename,
   p.size,
   p.width,
@@ -301,6 +304,7 @@ BEGIN
     user_id,
     title,
     description,
+    source,
     filename,
     size,
     width,
@@ -313,6 +317,7 @@ BEGIN
     p_post.user_id, -- user_id
     p_post.title, -- title
     p_post.description, -- description
+    p_post.source, -- source
     p_post.filename, -- filename
     p_post.size, -- size
     p_post.width, -- width

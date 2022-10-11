@@ -9,6 +9,7 @@ export interface Post {
   user_name: string;
   title?: string;
   description?: string;
+  source?: string;
   filename: string;
   size: string;
   width: string;
@@ -22,5 +23,6 @@ export interface Post {
 export interface PostInfo {
   title?: string;
   description?: string;
+  source?: string;
   tags: string[];
 }

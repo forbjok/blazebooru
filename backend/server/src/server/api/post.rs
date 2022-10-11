@@ -42,6 +42,7 @@ struct CalculatePageQuery {
 struct PostInfo {
     title: Option<String>,
     description: Option<String>,
+    source: Option<String>,
 
     #[serde(default)]
     tags: Vec<String>,
@@ -214,6 +215,7 @@ async fn upload_post(
             user_id: auth.claims.user_id,
             title: info.title.map(|s| s.into()),
             description: info.description.map(|s| s.into()),
+            source: info.source.map(|s| s.into()),
             filename: filename.into(),
             file,
             tags: info.tags.iter().map(|t| t.as_str()).collect(),

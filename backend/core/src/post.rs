@@ -53,6 +53,7 @@ impl BlazeBooruCore {
             user_id: Some(post.user_id),
             title: post.title.map(|s| s.to_string()),
             description: post.description.map(|s| s.to_string()),
+            source: post.source.map(|s| s.to_string()),
             filename: Some(post.filename.to_string()),
             size: Some(size),
             width: Some(width as i32),

@@ -41,6 +41,7 @@ impl From<dbm::ViewPost> for vm::Post {
             user_name: p.user_name.unwrap(),
             title: p.title,
             description: p.description,
+            source: p.source,
             filename: p.filename.unwrap(),
             size: p.size.unwrap(),
             width: p.width.unwrap(),

@@ -32,7 +32,8 @@ const url = computed(() => make_image_path(post.value));
     <div v-if="post.title" class="title">
       {{ post.title }}
     </div>
-    <div v-if="post.title" class="user">Uploaded by: {{ post.user_name }}</div>
+    <div class="user">Uploaded by: {{ post.user_name }}</div>
+    <div v-if="post.source" class="source">Source: {{ post.source }}</div>
     <div v-if="post.tags">Tags: <Tags :tags="post.tags" /></div>
     <div v-if="post.description" class="description">
       <div class="header">Description</div>

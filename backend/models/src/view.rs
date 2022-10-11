@@ -8,6 +8,7 @@ pub struct Post {
     pub user_name: String,
     pub title: Option<String>,
     pub description: Option<String>,
+    pub source: Option<String>,
     pub filename: String,
     pub size: i32,
     pub width: i32,
