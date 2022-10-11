@@ -1,5 +1,5 @@
 -- Create functions for automatically managing updated_at
-CREATE OR REPLACE FUNCTION manage_updated_at(_tbl regclass)
+CREATE FUNCTION manage_updated_at(_tbl regclass)
 RETURNS VOID
 LANGUAGE plpgsql
 
@@ -9,7 +9,7 @@ BEGIN
 END;
 $BODY$;
 
-CREATE OR REPLACE FUNCTION set_updated_at()
+CREATE FUNCTION set_updated_at()
 RETURNS trigger
 LANGUAGE plpgsql
 
@@ -21,6 +21,8 @@ BEGIN
   RETURN NEW;
 END;
 $BODY$;
+
+---- TABLES ----
 
 -- Create user table
 CREATE TABLE "user"
@@ -52,6 +54,7 @@ CREATE TABLE post
   hash text NOT NULL,
   ext text NOT NULL,
   tn_ext text NOT NULL,
+  tags text[] NOT NULL DEFAULT '{}',
   PRIMARY KEY (id),
   FOREIGN KEY (user_id)
     REFERENCES "user" (id) MATCH SIMPLE
@@ -62,7 +65,74 @@ CREATE TABLE post
 
 SELECT manage_updated_at('post'); -- Automatically manage updated_at
 
--- Create types
+-- Create tag table
+CREATE TABLE tag
+(
+  id serial NOT NULL,
+  created_at timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  tag text NOT NULL,
+  PRIMARY KEY (id),
+  UNIQUE (tag)
+);
+
+SELECT manage_updated_at('tag'); -- Automatically manage updated_at
+
+-- Create post_tag table
+CREATE TABLE post_tag
+(
+  created_at timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  post_id integer NOT NULL,
+  tag_id integer NOT NULL,
+  PRIMARY KEY (post_id, tag_id),
+  FOREIGN KEY (post_id)
+    REFERENCES post (id) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE CASCADE
+    NOT VALID,
+  FOREIGN KEY (tag_id)
+    REFERENCES tag (id) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE CASCADE
+    NOT VALID
+);
+
+-- Create refresh_token table
+CREATE TABLE refresh_token
+(
+  id bigserial NOT NULL,
+  created_at timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+  token uuid NOT NULL DEFAULT gen_random_uuid(),
+  session bigint NOT NULL,
+  used boolean NOT NULL DEFAULT false,
+  expires_at timestamp with time zone NOT NULL DEFAULT (CURRENT_TIMESTAMP + '30 days'::interval),
+  claims text NOT NULL,
+  PRIMARY KEY (id),
+  UNIQUE (token)
+);
+
+SELECT manage_updated_at('refresh_token'); -- Automatically manage updated_at
+
+---- INDEXES ----
+
+-- Create indexes
+CREATE INDEX refresh_token_token_idx ON refresh_token
+  USING btree
+  (token ASC NULLS LAST);
+
+CREATE INDEX refresh_token_session_idx ON refresh_token
+  USING btree
+  (session ASC NULLS LAST);
+
+---- SEQUENCES ----
+
+-- Create refresh token session sequence
+CREATE SEQUENCE refresh_token_session_seq AS bigint;
+
+---- TYPES ----
+
 CREATE TYPE new_post AS (
   user_id integer,
   title text,
@@ -81,16 +151,139 @@ CREATE TYPE new_user AS (
   password_hash text
 );
 
--- Create create_post function
-CREATE OR REPLACE FUNCTION create_post(
-  IN p_post new_post
+CREATE TYPE create_refresh_token_result AS (token uuid, session bigint);
+
+CREATE TYPE refresh_refresh_token_result AS (token uuid, session bigint, claims text);
+
+CREATE TYPE page_info AS (no integer, start_id integer);
+
+---- VIEWS ----
+
+-- Create view_post view
+CREATE VIEW view_post
+AS
+SELECT
+  p.id,
+  p.created_at,
+  u.name AS user_name,
+  p.title,
+  p.description,
+  p.filename,
+  p.size,
+  p.width,
+  p.height,
+  p.hash,
+  p.ext,
+  p.tn_ext,
+  p.tags
+FROM post AS p
+JOIN "user" AS u ON u.id = p.user_id;
+
+---- FUNCTIONS ----
+
+-- Create create_user function
+CREATE FUNCTION create_user(
+  IN p_user new_user
 )
-RETURNS post
+RETURNS "user"
 LANGUAGE plpgsql
 
 AS $BODY$
 DECLARE
-  v_post post;
+  v_user "user";
+BEGIN
+  -- Insert user
+  INSERT INTO "user" (
+    name,
+    password_hash
+  )
+  SELECT
+    p_user.name, -- name
+    p_user.password_hash -- password_hash
+  RETURNING * INTO v_user;
+
+  RETURN v_user;
+END;
+$BODY$;
+
+-- Create generate_post_tags function
+CREATE FUNCTION generate_post_tags(
+  IN p_post_id integer
+)
+RETURNS VOID
+LANGUAGE plpgsql
+
+AS $BODY$
+BEGIN
+  UPDATE post AS p
+  SET tags = (SELECT COALESCE(array_agg(t.tag), ARRAY[]::text[])
+              FROM tag AS t
+              JOIN post_tag AS pt ON pt.tag_id = t.id
+              WHERE pt.post_id = p.id)
+  WHERE p.id = p_post_id;
+END;
+$BODY$;
+
+-- Create generate_post_tags function
+CREATE FUNCTION create_missing_tags(
+  IN p_tags text[]
+)
+RETURNS VOID
+LANGUAGE plpgsql
+
+AS $BODY$
+BEGIN
+  INSERT INTO tag (tag)
+    SELECT tag
+    FROM unnest(p_tags) AS pt(tag)
+    WHERE NOT EXISTS(SELECT * FROM tag AS t WHERE t.tag = pt.tag);
+END;
+$BODY$;
+
+-- Create update_post_tags function
+CREATE FUNCTION update_post_tags(
+  IN p_post_id integer,
+  IN p_add_tags text[],
+  IN p_remove_tags text[]
+)
+RETURNS VOID
+LANGUAGE plpgsql
+
+AS $BODY$
+BEGIN
+  -- Create missing tags
+  PERFORM create_missing_tags(p_add_tags);
+
+  -- Add links for added tags to post
+  INSERT INTO post_tag (post_id, tag_id)
+    SELECT p_post_id, id
+    FROM tag WHERE tag = ANY(p_add_tags)
+    ON CONFLICT(post_id, tag_id)
+    DO NOTHING;
+
+  -- Remove removed tag links for post
+  DELETE FROM post_tag AS pt
+  USING tag AS t
+  WHERE t.id = pt.tag_id
+    AND t.tag = ANY(p_remove_tags);
+
+  -- Regenerate cached tags column on post
+  -- (used for faster tag-based searches)
+  PERFORM generate_post_tags(p_post_id);
+END;
+$BODY$;
+
+-- Create create_post function
+CREATE FUNCTION create_post(
+  IN p_post new_post,
+  IN p_tags text[]
+)
+RETURNS integer
+LANGUAGE plpgsql
+
+AS $BODY$
+DECLARE
+  v_post_id integer;
 BEGIN
   -- Insert post
   INSERT INTO post (
@@ -116,95 +309,242 @@ BEGIN
     p_post.hash, -- hash
     p_post.ext, -- ext
     p_post.tn_ext -- tn_ext
-  RETURNING * INTO v_post;
+  RETURNING id INTO v_post_id;
 
-  RETURN v_post;
+  -- Add post tags
+  PERFORM update_post_tags(v_post_id, p_tags, '{}');
+
+  RETURN v_post_id;
 END;
 $BODY$;
 
 
--- Create create_user function
-CREATE OR REPLACE FUNCTION create_user(
-  IN p_user new_user
+
+-- Create filter_tags function
+CREATE FUNCTION filter_tags(
+  IN p_tags text[]
 )
-RETURNS "user"
+RETURNS text[]
+LANGUAGE plpgsql
+
+AS $BODY$
+BEGIN
+  RETURN (SELECT COALESCE(array_agg(tag), '{}') FROM tag WHERE tag = ANY(p_tags));
+END;
+$BODY$;
+
+-- Create validate_tags function
+CREATE FUNCTION validate_tags(
+  INOUT p_include_tags text[],
+  INOUT p_exclude_tags text[],
+  OUT p_valid boolean
+)
 LANGUAGE plpgsql
 
 AS $BODY$
 DECLARE
-  v_user "user";
+  v_include_tags text[];
 BEGIN
-  -- Insert user
-  INSERT INTO "user" (
-    name,
-    password_hash
-  )
-  SELECT
-    p_user.name, -- name
-    p_user.password_hash -- password_hash
-  RETURNING * INTO v_user;
+  v_include_tags := filter_tags(p_include_tags);
+  p_exclude_tags := filter_tags(p_exclude_tags);
 
-  RETURN v_user;
+  p_valid := NOT (cardinality(v_include_tags) < cardinality(p_include_tags) OR v_include_tags && p_exclude_tags);
+  p_include_tags := v_include_tags;
 END;
 $BODY$;
 
--- Create view_post view
-CREATE VIEW view_post
-AS
-SELECT
-  p.id,
-  p.created_at,
-  u.name AS user_name,
-  p.title,
-  p.description,
-  p.filename,
-  p.size,
-  p.width,
-  p.height,
-  p.hash,
-  p.ext,
-  p.tn_ext
-FROM post AS p
-INNER JOIN "user" AS u ON u.id = p.user_id;
+-- Create calculate_pages function
+-- Calculate the starting IDs of a range of pages,
+-- optionally starting from an already known page.
+CREATE FUNCTION calculate_pages(
+  IN p_include_tags text[],
+  IN p_exclude_tags text[],
+  IN p_posts_per_page integer,
+  IN p_page_count integer,
+  IN p_origin_page page_info
+)
+RETURNS page_info[]
+LANGUAGE plpgsql
 
----- REFRESH TOKEN ----
+AS $BODY$
+DECLARE
+  v_pages page_info[];
+  v_valid boolean;
+BEGIN
+  SELECT * INTO p_include_tags, p_exclude_tags, v_valid FROM validate_tags(p_include_tags, p_exclude_tags);
+  IF NOT v_valid THEN
+    RETURN v_pages;
+  END IF;
 
--- Create refresh_token table
-CREATE TABLE refresh_token
-(
-  id bigserial NOT NULL,
-  created_at timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  SELECT
+    array_agg((x.no, x.start_id)::page_info) INTO v_pages
+  FROM (
+    SELECT
+      COALESCE(p_origin_page.no, 0) + ROW_NUMBER() OVER () AS no,
+      x.id AS start_id
+    FROM (
+      SELECT
+        id,
+        ROW_NUMBER() OVER (ORDER BY id DESC) AS rn
+      FROM view_post
+      WHERE
+        -- Start from origin page
+        (p_origin_page IS NULL OR id < p_origin_page.start_id)
+        -- Post must have all the included tags
+        AND tags @> p_include_tags
+        -- Post must not have any of the excluded tags
+        AND NOT tags && p_exclude_tags
+      ORDER BY id DESC
+      LIMIT (p_page_count * p_posts_per_page) -- X pages at a time
+    ) AS x
+    WHERE MOD(x.rn - 1, p_posts_per_page) = 0
+  ) AS x;
 
-  token uuid NOT NULL DEFAULT gen_random_uuid(),
-  session bigint NOT NULL,
-  used boolean NOT NULL DEFAULT false,
-  expires_at timestamp with time zone NOT NULL DEFAULT (CURRENT_TIMESTAMP + '30 days'::interval),
-  claims text NOT NULL,
-  PRIMARY KEY (id),
-  UNIQUE (token)
-);
+  RETURN v_pages;
+END;
+$BODY$;
 
-SELECT manage_updated_at('refresh_token'); -- Automatically manage updated_at
+-- Create calculate_pages_reverse function
+-- Like calculate_pages, but in reverse.
+-- (Calculates previous pages)
+CREATE FUNCTION calculate_pages_reverse(
+  IN p_include_tags text[],
+  IN p_exclude_tags text[],
+  IN p_posts_per_page integer,
+  IN p_page_count integer,
+  IN p_origin_page page_info
+)
+RETURNS page_info[]
+LANGUAGE plpgsql
 
--- Create indexes
-CREATE INDEX refresh_token_token_idx ON refresh_token
-  USING btree
-  (token ASC NULLS LAST);
+AS $BODY$
+DECLARE
+  v_pages page_info[];
+  v_valid boolean;
+BEGIN
+  SELECT * INTO p_include_tags, p_exclude_tags, v_valid FROM validate_tags(p_include_tags, p_exclude_tags);
+  IF NOT v_valid THEN
+    RETURN v_pages;
+  END IF;
 
-CREATE INDEX refresh_token_session_idx ON refresh_token
-  USING btree
-  (session ASC NULLS LAST);
+  SELECT
+    array_agg((x.no, x.start_id)::page_info) INTO v_pages
+  FROM (
+    SELECT
+      COALESCE(p_origin_page.no, 0) - ROW_NUMBER() OVER () + 1 AS no,
+      x.id AS start_id
+    FROM (
+      SELECT
+        id,
+        ROW_NUMBER() OVER (ORDER BY id ASC) AS rn
+      FROM view_post
+      WHERE
+        -- Start from origin page
+        id >= p_origin_page.start_id
+        -- Post must have all the included tags
+        AND tags @> p_include_tags
+        -- Post must not have any of the excluded tags
+        AND NOT tags && p_exclude_tags
+      ORDER BY id ASC
+      LIMIT ((p_page_count + 1) * p_posts_per_page) -- X pages at a time
+    ) AS x
+    WHERE MOD(x.rn - 1, p_posts_per_page) = 0
+  ) AS x
+  WHERE x.no < p_origin_page.no;
 
--- Create refresh token session sequence
-CREATE SEQUENCE refresh_token_session_seq AS bigint;
+  RETURN v_pages;
+END;
+$BODY$;
 
--- Create types
-CREATE TYPE create_refresh_token_result AS (token uuid, session bigint);
-CREATE TYPE refresh_refresh_token_result AS (token uuid, session bigint, claims text);
+-- Create get_view_posts function
+CREATE FUNCTION get_view_posts(
+  IN p_include_tags text[],
+  IN p_exclude_tags text[],
+  IN p_start_id integer,
+  IN p_limit integer
+)
+RETURNS SETOF view_post
+LANGUAGE plpgsql
 
--- Create create_refresh_token function
-CREATE OR REPLACE FUNCTION create_refresh_token(
+AS $BODY$
+DECLARE
+  v_valid boolean;
+BEGIN
+  SELECT * INTO p_include_tags, p_exclude_tags, v_valid FROM validate_tags(p_include_tags, p_exclude_tags);
+  IF NOT v_valid THEN
+    RETURN QUERY SELECT * FROM view_post LIMIT 0;
+  END IF;
+
+  RETURN QUERY
+  SELECT *
+  FROM view_post
+  WHERE
+    id <= p_start_id
+    -- Post must have all the included tags
+    AND tags @> p_include_tags
+    -- Post must not have any of the excluded tags
+    AND NOT tags && p_exclude_tags
+  ORDER BY id DESC
+  LIMIT p_limit;
+END;
+$BODY$;
+
+-- Create calculate_last_page function
+CREATE FUNCTION calculate_last_page(
+  IN p_include_tags text[],
+  IN p_exclude_tags text[],
+  IN p_posts_per_page integer
+)
+RETURNS page_info
+LANGUAGE plpgsql
+
+AS $BODY$
+DECLARE
+  v_valid boolean;
+  v_post_count integer;
+  v_page_count integer;
+  v_last_page_start_id integer;
+BEGIN
+  SELECT * INTO p_include_tags, p_exclude_tags, v_valid FROM validate_tags(p_include_tags, p_exclude_tags);
+  IF NOT v_valid THEN
+    RETURN (1, 0)::page_info;
+  END IF;
+
+  IF cardinality(p_include_tags) = 0 AND cardinality(p_exclude_tags) = 0 THEN
+    v_post_count := (SELECT reltuples FROM pg_class where relname = 'post');
+    v_page_count := CEIL(v_post_count / p_posts_per_page);
+    v_last_page_start_id := v_post_count - (v_page_count * p_posts_per_page);
+  ELSE
+    -- Get total post count in search
+    SELECT COALESCE(COUNT(*)::integer, 0) INTO v_post_count
+    FROM view_post
+    WHERE
+      -- Post must have all the included tags
+      tags @> p_include_tags
+      -- Post must not have any of the excluded tags
+      AND NOT tags && p_exclude_tags;
+
+    -- Calculate page count
+    v_page_count := CEIL(v_post_count / p_posts_per_page);
+
+    -- Get start id of last page
+    SELECT id INTO v_last_page_start_id
+    FROM view_post
+    WHERE
+      -- Post must have all the included tags
+      tags @> p_include_tags
+      -- Post must not have any of the excluded tags
+      AND NOT tags && p_exclude_tags
+    ORDER BY id ASC
+    LIMIT 1
+    OFFSET v_post_count - (v_page_count * p_posts_per_page);
+  END IF;
+
+  RETURN (v_page_count, v_last_page_start_id)::page_info;
+END;
+$BODY$;
+
+CREATE FUNCTION create_refresh_token(
   IN p_claims text
 )
 RETURNS create_refresh_token_result
@@ -228,7 +568,7 @@ END;
 $BODY$;
 
 -- Create invalidate_session function
-CREATE OR REPLACE FUNCTION invalidate_session(
+CREATE FUNCTION invalidate_session(
   IN p_session bigint
 )
 RETURNS VOID
@@ -243,7 +583,7 @@ END;
 $BODY$;
 
 -- Create refresh_refresh_token function
-CREATE OR REPLACE FUNCTION refresh_refresh_token(
+CREATE FUNCTION refresh_refresh_token(
   IN p_token uuid
 )
 RETURNS refresh_refresh_token_result
