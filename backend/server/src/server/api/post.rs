@@ -120,9 +120,6 @@ async fn get_view_posts(
     }): Query<PostSearchQuery>,
     Query(PaginatedQuery { start_id, limit }): Query<PaginatedQuery>,
 ) -> Result<Json<Vec<vm::Post>>, ApiError> {
-    let include_tags = include_tags.iter().map(|t| t.as_str()).collect();
-    let exclude_tags = exclude_tags.iter().map(|t| t.as_str()).collect();
-
     let posts = server
         .core
         .get_view_posts(include_tags, exclude_tags, start_id, limit)

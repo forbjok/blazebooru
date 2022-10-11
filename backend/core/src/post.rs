@@ -89,8 +89,8 @@ impl BlazeBooruCore {
 
     pub async fn get_view_posts(
         &self,
-        include_tags: Vec<&str>,
-        exclude_tags: Vec<&str>,
+        include_tags: Vec<String>,
+        exclude_tags: Vec<String>,
         start_id: i32,
         limit: i32,
     ) -> Result<Vec<vm::Post>, anyhow::Error> {

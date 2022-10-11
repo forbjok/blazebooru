@@ -15,8 +15,8 @@ impl BlazeBooruCore {
         password: &str,
     ) -> Result<Option<lm::User>, anyhow::Error> {
         if let Some(user) = self.store.get_user_by_name(user_name).await? {
-            let password_hash = PasswordHash::new(user.password_hash.as_ref().unwrap())
-                .map_err(|err| anyhow!("{err}"))?;
+            let password_hash =
+                PasswordHash::new(&user.password_hash).map_err(|err| anyhow!("{err}"))?;
 
             let argon2 = Argon2::default();
             if argon2

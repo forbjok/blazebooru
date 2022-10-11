@@ -24,7 +24,7 @@ impl BlazeBooruCore {
 
         let user = self.store.create_user(&user).await?;
 
-        Ok(user.id.unwrap())
+        Ok(user.id)
     }
 
     pub async fn get_user_profile(&self, user_id: i32) -> Result<Option<vm::User>, anyhow::Error> {

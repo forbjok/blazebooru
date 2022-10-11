@@ -13,17 +13,16 @@ impl PgStore {
     }
 
     pub async fn get_user(&self, id: i32) -> Result<Option<dbm::User>, StoreError> {
-        let user =
-            sqlx::query_as_unchecked!(dbm::User, r#"SELECT * FROM "user" WHERE id = $1;"#, id)
-                .fetch_optional(&self.pool)
-                .await
-                .context("Error getting user from database")?;
+        let user = sqlx::query_as!(dbm::User, r#"SELECT * FROM "user" WHERE id = $1;"#, id)
+            .fetch_optional(&self.pool)
+            .await
+            .context("Error getting user from database")?;
 
         Ok(user)
     }
 
     pub async fn get_user_by_name(&self, user_name: &str) -> Result<Option<dbm::User>, StoreError> {
-        let user = sqlx::query_as_unchecked!(
+        let user = sqlx::query_as!(
             dbm::User,
             r#"SELECT * FROM "user" WHERE name = $1;"#,
             user_name

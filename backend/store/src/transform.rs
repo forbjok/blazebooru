@@ -15,10 +15,10 @@ impl From<dbm::CreateRefreshTokenResult> for lm::CreateRefreshTokenResult {
 impl From<dbm::User> for lm::User {
     fn from(u: dbm::User) -> Self {
         lm::User {
-            id: u.id.unwrap(),
-            created_at: u.created_at.unwrap(),
-            updated_at: u.updated_at.unwrap(),
-            name: u.name.unwrap(),
+            id: u.id,
+            created_at: u.created_at,
+            updated_at: u.updated_at,
+            name: u.name,
         }
     }
 }
@@ -26,9 +26,9 @@ impl From<dbm::User> for lm::User {
 impl From<dbm::User> for vm::User {
     fn from(u: dbm::User) -> Self {
         vm::User {
-            id: u.id.unwrap(),
-            created_at: u.created_at.unwrap(),
-            name: u.name.unwrap(),
+            id: u.id,
+            created_at: u.created_at,
+            name: u.name,
         }
     }
 }
@@ -50,7 +50,7 @@ impl From<dbm::ViewPost> for vm::Post {
             hash: p.hash.unwrap(),
             ext: p.ext.unwrap(),
             tn_ext: p.tn_ext.unwrap(),
-            tags: p.tags,
+            tags: p.tags.unwrap(),
         }
     }
 }

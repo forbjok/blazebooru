@@ -4,7 +4,7 @@ use crate::{models as dbm, PgStore, StoreError};
 
 impl PgStore {
     pub async fn get_post(&self, id: i32) -> Result<Option<dbm::Post>, StoreError> {
-        let post = sqlx::query_as_unchecked!(dbm::Post, r#"SELECT * FROM post WHERE id = $1;"#, id)
+        let post = sqlx::query_as!(dbm::Post, r#"SELECT * FROM post WHERE id = $1;"#, id)
             .fetch_optional(&self.pool)
             .await
             .context("Error getting post from database")?;
@@ -37,7 +37,7 @@ impl PgStore {
     }
 
     pub async fn get_view_post(&self, id: i32) -> Result<Option<dbm::ViewPost>, StoreError> {
-        let post = sqlx::query_as_unchecked!(
+        let post = sqlx::query_as!(
             dbm::ViewPost,
             r#"SELECT * FROM view_post WHERE id = $1;"#,
             id
@@ -51,12 +51,12 @@ impl PgStore {
 
     pub async fn get_view_posts(
         &self,
-        include_tags: &[&str],
-        exclude_tags: &[&str],
+        include_tags: &[String],
+        exclude_tags: &[String],
         start_id: i32,
         limit: i32,
     ) -> Result<Vec<dbm::ViewPost>, StoreError> {
-        let posts = sqlx::query_as_unchecked!(
+        let posts = sqlx::query_as!(
             dbm::ViewPost,
             r#"SELECT * FROM get_view_posts($1, $2, $3, $4);"#,
             include_tags,
