@@ -205,7 +205,7 @@ BEGIN
     FROM (
       SELECT
         id,
-        ROW_NUMBER() OVER () AS rn
+        ROW_NUMBER() OVER (ORDER BY id DESC) AS rn
       FROM view_post
       WHERE
         -- Start from origin page
@@ -256,7 +256,7 @@ BEGIN
     FROM (
       SELECT
         id,
-        ROW_NUMBER() OVER () AS rn
+        ROW_NUMBER() OVER (ORDER BY id ASC) AS rn
       FROM view_post
       WHERE
         -- Start from origin page
