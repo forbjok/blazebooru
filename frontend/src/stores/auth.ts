@@ -6,11 +6,6 @@ import axios from "axios";
 import type { LoginRequest, LoginResponse } from "@/models/api/login";
 import type { User } from "@/models/api/user";
 
-export interface Search {
-  tags: string[];
-  exclude_tags: string[];
-}
-
 // useStorage serializer that works with undefined,
 // because the default one doesn't.
 const serializer = {
@@ -44,7 +39,6 @@ export const useAuthStore = defineStore("auth", () => {
     try {
       const response = await axios.post<LoginResponse>(`/api/auth/login`, request);
       auth.value = response.data;
-      //this.saveAuth();
 
       await getUserProfile();
       return true;
@@ -58,7 +52,6 @@ export const useAuthStore = defineStore("auth", () => {
     try {
       const response = await axios.post<LoginResponse>("/api/user/register", request);
       auth.value = response.data;
-      //this.saveAuth();
 
       await getUserProfile();
       return true;
@@ -121,7 +114,6 @@ export const useAuthStore = defineStore("auth", () => {
     try {
       const response = await axios.post<LoginResponse>("/api/auth/refresh", data);
       auth.value = response.data;
-      //this.saveAuth();
       return true;
     } catch {
       clearAuth();
@@ -132,7 +124,6 @@ export const useAuthStore = defineStore("auth", () => {
   function clearAuth() {
     auth.value = undefined;
     userProfile.value = undefined;
-    //this.saveAuth();
   }
 
   return { isAuthorized, userProfile, getAccessToken, getAuthHeaders, login, logout, register };

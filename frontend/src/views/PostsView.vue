@@ -18,7 +18,7 @@ onMounted(async () => {
   <main :class="`theme-${mainStore.settings.theme}`">
     <MainLayout>
       <div class="layout">
-        <SearchPanel class="side-panel" @search="mainStore.searchPosts" />
+        <SearchPanel :initial_search="mainStore.activeSearch" class="side-panel" @search="mainStore.searchPosts" />
         <div class="content">
           <Posts v-if="mainStore.posts" :posts="mainStore.posts" />
           <div v-if="mainStore.pageCount > 1" class="pages">

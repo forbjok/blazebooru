@@ -1,26 +1,41 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, toRefs } from "vue";
+
 import TagsEditor from "./TagsEditor.vue";
 
+import type { Search } from "@/stores/main";
+
+interface Props {
+  initial_search?: Search;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  initial_search: () => ({
+    tags: [],
+    exclude_tags: [],
+  }),
+});
+
 const emit = defineEmits<{
-  (e: "search", tags: string[], exclude_tags: string[]): void;
+  (e: "search", search: Search): void;
 }>();
 
-const search = () => {
-  emit("search", tags.value, exclude_tags.value);
+const { initial_search } = toRefs(props);
+
+const performSearch = () => {
+  emit("search", search.value);
 };
 
-const tags = ref<string[]>([]);
-const exclude_tags = ref<string[]>([]);
+const search = ref(initial_search.value);
 </script>
 
 <template>
   <div class="search-panel">
-    <form class="search-form" @submit.prevent="search">
+    <form class="search-form" @submit.prevent="performSearch">
       <label>Search for tags</label>
-      <TagsEditor v-model="tags" @submit-blank="search" />
+      <TagsEditor v-model="search.tags" @submit-blank="performSearch" />
       <label>Exclude</label>
-      <TagsEditor v-model="exclude_tags" @submit-blank="search" />
+      <TagsEditor v-model="search.exclude_tags" @submit-blank="performSearch" />
       <input class="search-button" type="submit" value="Search" />
     </form>
   </div>

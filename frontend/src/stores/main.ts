@@ -213,8 +213,8 @@ export const useMainStore = defineStore("main", () => {
     }
   }
 
-  async function searchPosts(tags: string[], exclude_tags: string[]) {
-    activeSearch.value = { tags, exclude_tags };
+  async function searchPosts(search: Search) {
+    activeSearch.value = search;
     currentPage.value = -1;
     lastPage.value = undefined;
     calculatedPages = [];
@@ -229,7 +229,10 @@ export const useMainStore = defineStore("main", () => {
       return;
     }
 
-    await searchPosts([], []);
+    await searchPosts({
+      tags: [],
+      exclude_tags: [],
+    });
   }
 
   return {
