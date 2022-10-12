@@ -1,3 +1,6 @@
+-- Enable intarray extension
+CREATE EXTENSION intarray;
+
 -- Create functions for automatically managing updated_at
 CREATE FUNCTION manage_updated_at(_tbl regclass)
 RETURNS VOID
@@ -127,6 +130,26 @@ CREATE TABLE refresh_token
 
 SELECT manage_updated_at('refresh_token'); -- Automatically manage updated_at
 
+-- Create search_cache table
+CREATE TABLE search_cache
+(
+  id serial NOT NULL,
+  created_at timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+  tags text[] NOT NULL,
+  exclude_tags text[] NOT NULL,
+
+  post_count integer NOT NULL,
+  first_post_id integer NOT NULL,
+  last_page_post_ids integer[] NOT NULL,
+
+  PRIMARY KEY (id),
+  UNIQUE (tags, exclude_tags)
+);
+
+SELECT manage_updated_at('search_cache'); -- Automatically manage updated_at
+
 ---- INDEXES ----
 
 -- Create indexes
@@ -231,25 +254,7 @@ BEGIN
 END;
 $BODY$;
 
--- Create generate_post_tags function
-CREATE FUNCTION generate_post_tags(
-  IN p_post_id integer
-)
-RETURNS VOID
-LANGUAGE plpgsql
-
-AS $BODY$
-BEGIN
-  UPDATE post AS p
-  SET tags = (SELECT COALESCE(array_agg(t.tag), ARRAY[]::text[])
-              FROM tag AS t
-              JOIN post_tag AS pt ON pt.tag_id = t.id
-              WHERE pt.post_id = p.id)
-  WHERE p.id = p_post_id;
-END;
-$BODY$;
-
--- Create generate_post_tags function
+-- Create create_missing_tags function
 CREATE FUNCTION create_missing_tags(
   IN p_tags text[]
 )
@@ -269,15 +274,28 @@ $BODY$;
 CREATE FUNCTION update_post_tags(
   IN p_post_id integer,
   IN p_add_tags text[],
-  IN p_remove_tags text[]
+  IN p_remove_tags text[],
+  IN p_new_post boolean
 )
 RETURNS VOID
 LANGUAGE plpgsql
 
 AS $BODY$
+DECLARE
+  v_old_tags text[];
+  v_new_tags text[];
 BEGIN
   -- Create missing tags
   PERFORM create_missing_tags(p_add_tags);
+
+  -- Retrieve old tags
+  SELECT tags INTO v_old_tags FROM post WHERE id = p_post_id;
+
+  -- Calculate new tags
+  v_new_tags := array(SELECT unnest(v_old_tags || p_add_tags) EXCEPT SELECT unnest(p_remove_tags));
+
+  -- Update post tags
+  UPDATE post SET tags = v_new_tags WHERE id = p_post_id;
 
   -- Add links for added tags to post
   INSERT INTO post_tag (post_id, tag_id)
@@ -292,9 +310,29 @@ BEGIN
   WHERE t.id = pt.tag_id
     AND t.tag = ANY(p_remove_tags);
 
-  -- Regenerate cached tags column on post
-  -- (used for faster tag-based searches)
-  PERFORM generate_post_tags(p_post_id);
+  -- Update search cache to reflect added post
+  UPDATE search_cache
+  SET post_count = post_count + 1,
+      first_post_id = (CASE WHEN p_post_id > first_post_id THEN p_post_id ELSE first_post_id END),
+      last_page_post_ids = (CASE WHEN p_post_id < (SELECT MAX(id) FROM unnest(last_page_post_ids) AS id)
+                            THEN sort_asc(last_page_post_ids + p_post_id)
+                            ELSE last_page_post_ids
+                            END)
+  WHERE v_new_tags @> tags
+    AND NOT v_new_tags && exclude_tags
+    AND (p_new_post OR (NOT v_old_tags @> tags) OR v_old_tags && exclude_tags);
+
+  -- Update search cache to reflect removed post
+  UPDATE search_cache
+  SET post_count = post_count - 1,
+      last_page_post_ids = (CASE WHEN (SELECT p_post_id BETWEEN MIN(id) AND MAX(id) FROM unnest(last_page_post_ids) AS id)
+                            THEN last_page_post_ids - p_post_id
+                            ELSE last_page_post_ids
+                            END)
+  WHERE NOT p_new_post
+    AND ((NOT v_new_tags @> tags) OR v_new_tags && exclude_tags)
+    AND v_old_tags @> tags
+    AND NOT v_old_tags && exclude_tags;
 END;
 $BODY$;
 
@@ -339,7 +377,7 @@ BEGIN
   RETURNING id INTO v_post_id;
 
   -- Add post tags
-  PERFORM update_post_tags(v_post_id, p_tags, '{}');
+  PERFORM update_post_tags(v_post_id, p_tags, '{}', true);
 
   RETURN v_post_id;
 END;
@@ -369,7 +407,7 @@ BEGIN
 
   IF v_success THEN
     -- Update post tags
-    PERFORM update_post_tags(p_update_post.id, p_update_post.add_tags, p_update_post.remove_tags);
+    PERFORM update_post_tags(p_update_post.id, p_update_post.add_tags, p_update_post.remove_tags, false);
   END IF;
 
   RETURN COALESCE(v_success, false);
@@ -385,7 +423,7 @@ LANGUAGE plpgsql
 
 AS $BODY$
 BEGIN
-  RETURN (SELECT COALESCE(array_agg(tag), '{}') FROM tag WHERE tag = ANY(p_tags));
+  RETURN array(SELECT tag FROM tag WHERE tag = ANY(p_tags));
 END;
 $BODY$;
 
@@ -409,6 +447,63 @@ BEGIN
 END;
 $BODY$;
 
+-- Create initialize_search_cache function
+CREATE FUNCTION initialize_search_cache(
+  IN p_include_tags text[],
+  IN p_exclude_tags text[]
+)
+RETURNS VOID
+LANGUAGE plpgsql
+
+AS $BODY$
+DECLARE
+  v_post_count integer;
+  v_first_post_id integer;
+  v_last_post_id integer;
+BEGIN
+  -- Try to get cached search info
+  SELECT post_count INTO v_post_count
+  FROM search_cache
+  WHERE tags = p_include_tags
+    AND exclude_tags = p_exclude_tags;
+
+  IF NOT EXISTS(SELECT * FROM search_cache
+                WHERE tags = p_include_tags
+                  AND exclude_tags = p_exclude_tags)
+  THEN
+    -- Get total post count in search
+    SELECT COALESCE(COUNT(*)::integer, 0), MAX(id), MIN(id)
+    INTO v_post_count, v_first_post_id, v_last_post_id
+    FROM view_post
+    WHERE
+      -- Post must have all the included tags
+      tags @> p_include_tags
+      -- Post must not have any of the excluded tags
+      AND NOT tags && p_exclude_tags;
+
+    -- If there are 0 posts in the search, return immediately.
+    IF v_post_count = 0 THEN
+      RETURN;
+    END IF;
+
+    INSERT INTO search_cache (
+      tags,
+      exclude_tags,
+      post_count,
+      first_post_id,
+      last_page_post_ids
+    )
+    VALUES (
+      p_include_tags, -- tags
+      p_exclude_tags, -- exclude_tags
+      v_post_count, -- post_count
+      v_first_post_id, -- first_post_id
+      ARRAY[v_last_post_id] -- last_page_post_ids
+    );
+  END IF;
+END;
+$BODY$;
+
 -- Create calculate_pages function
 -- Calculate the starting IDs of a range of pages,
 -- optionally starting from an already known page.
@@ -426,35 +521,57 @@ AS $BODY$
 DECLARE
   v_pages page_info[];
   v_valid boolean;
+  v_start_id integer;
+  v_last_id integer;
 BEGIN
   SELECT * INTO p_include_tags, p_exclude_tags, v_valid FROM validate_tags(p_include_tags, p_exclude_tags);
   IF NOT v_valid THEN
     RETURN v_pages;
   END IF;
 
-  SELECT
-    array_agg((x.no, x.start_id)::page_info) INTO v_pages
-  FROM (
-    SELECT
-      COALESCE(p_origin_page.no, 0) + ROW_NUMBER() OVER () AS no,
-      x.id AS start_id
+  -- Make sure search cache is initialized
+  PERFORM initialize_search_cache(p_include_tags, p_exclude_tags);
+
+  SELECT first_post_id, last_page_post_ids[1]
+  INTO v_start_id, v_last_id
+  FROM search_cache
+  WHERE tags = p_include_tags
+    AND exclude_tags = p_exclude_tags;
+
+  -- If no posts exist in the search, return.
+  IF v_start_id IS NULL THEN
+    RETURN v_pages;
+  END IF;
+
+  IF p_origin_page.start_id IS NOT NULL THEN
+    v_start_id := p_origin_page.start_id;
+  END IF;
+
+  v_pages := array(
+    SELECT (no, start_id)::page_info
     FROM (
       SELECT
-        id,
-        ROW_NUMBER() OVER (ORDER BY id DESC) AS rn
-      FROM view_post
-      WHERE
-        -- Start from origin page
-        (p_origin_page IS NULL OR id < p_origin_page.start_id)
-        -- Post must have all the included tags
-        AND tags @> p_include_tags
-        -- Post must not have any of the excluded tags
-        AND NOT tags && p_exclude_tags
-      ORDER BY id DESC
-      LIMIT (p_page_count * p_posts_per_page) -- X pages at a time
+        COALESCE(p_origin_page.no, 1) + ROW_NUMBER() OVER () - 1 AS no,
+        x.id AS start_id
+      FROM (
+        SELECT
+          id,
+          ROW_NUMBER() OVER (ORDER BY id DESC) AS rn
+        FROM view_post
+        WHERE
+          -- Only search IDs between first first and last post ID for this search
+          id BETWEEN v_last_id AND v_start_id
+          -- Post must have all the included tags
+          AND tags @> p_include_tags
+          -- Post must not have any of the excluded tags
+          AND NOT tags && p_exclude_tags
+        ORDER BY id DESC
+        LIMIT (p_page_count * p_posts_per_page) -- X pages at a time
+      ) AS x
+      WHERE MOD(x.rn - 1, p_posts_per_page) = 0
     ) AS x
-    WHERE MOD(x.rn - 1, p_posts_per_page) = 0
-  ) AS x;
+    WHERE x.no > COALESCE(p_origin_page.no, 0)
+  );
 
   RETURN v_pages;
 END;
@@ -477,36 +594,57 @@ AS $BODY$
 DECLARE
   v_pages page_info[];
   v_valid boolean;
+  v_start_id integer;
+  v_last_id integer;
 BEGIN
   SELECT * INTO p_include_tags, p_exclude_tags, v_valid FROM validate_tags(p_include_tags, p_exclude_tags);
   IF NOT v_valid THEN
     RETURN v_pages;
   END IF;
 
-  SELECT
-    array_agg((x.no, x.start_id)::page_info) INTO v_pages
-  FROM (
-    SELECT
-      COALESCE(p_origin_page.no, 0) - ROW_NUMBER() OVER () + 1 AS no,
-      x.id AS start_id
+  -- Make sure search cache is initialized
+  PERFORM initialize_search_cache(p_include_tags, p_exclude_tags);
+
+  SELECT first_post_id, last_page_post_ids[1]
+  INTO v_start_id, v_last_id
+  FROM search_cache
+  WHERE tags = p_include_tags
+    AND exclude_tags = p_exclude_tags;
+
+  -- If no posts exist in the search, return.
+  IF v_start_id IS NULL THEN
+    RETURN v_pages;
+  END IF;
+
+  IF p_origin_page.start_id IS NOT NULL THEN
+    v_last_id := p_origin_page.start_id;
+  END IF;
+
+  v_pages := array(
+    SELECT (no, start_id)::page_info
     FROM (
       SELECT
-        id,
-        ROW_NUMBER() OVER (ORDER BY id ASC) AS rn
-      FROM view_post
-      WHERE
-        -- Start from origin page
-        id >= p_origin_page.start_id
-        -- Post must have all the included tags
-        AND tags @> p_include_tags
-        -- Post must not have any of the excluded tags
-        AND NOT tags && p_exclude_tags
-      ORDER BY id ASC
-      LIMIT ((p_page_count + 1) * p_posts_per_page) -- X pages at a time
+        COALESCE(p_origin_page.no, 0) - ROW_NUMBER() OVER () + 1 AS no,
+        x.id AS start_id
+      FROM (
+        SELECT
+          id,
+          ROW_NUMBER() OVER (ORDER BY id ASC) AS rn
+        FROM view_post
+        WHERE
+          -- Only search IDs between first first and last post ID for this search
+          id BETWEEN v_last_id AND v_start_id
+          -- Post must have all the included tags
+          AND tags @> p_include_tags
+          -- Post must not have any of the excluded tags
+          AND NOT tags && p_exclude_tags
+        ORDER BY id ASC
+        LIMIT ((p_page_count + 1) * p_posts_per_page) -- X pages at a time
+      ) AS x
+      WHERE MOD(x.rn - 1, p_posts_per_page) = 0
     ) AS x
-    WHERE MOD(x.rn - 1, p_posts_per_page) = 0
-  ) AS x
-  WHERE x.no < p_origin_page.no;
+    WHERE x.no < p_origin_page.no
+  );
 
   RETURN v_pages;
 END;
@@ -525,17 +663,31 @@ LANGUAGE plpgsql
 AS $BODY$
 DECLARE
   v_valid boolean;
+  v_last_id integer;
 BEGIN
   SELECT * INTO p_include_tags, p_exclude_tags, v_valid FROM validate_tags(p_include_tags, p_exclude_tags);
   IF NOT v_valid THEN
     RETURN QUERY SELECT * FROM view_post LIMIT 0;
   END IF;
 
+  -- Make sure search cache is initialized
+  PERFORM initialize_search_cache(p_include_tags, p_exclude_tags);
+
+  SELECT last_page_post_ids[1] INTO v_last_id
+  FROM search_cache
+  WHERE tags = p_include_tags
+    AND exclude_tags = p_exclude_tags;
+
+  -- If no posts exist in the search, return.
+  IF v_last_id IS NULL THEN
+    RETURN;
+  END IF;
+
   RETURN QUERY
   SELECT *
   FROM view_post
   WHERE
-    id <= p_start_id
+    id BETWEEN v_last_id AND p_start_id
     -- Post must have all the included tags
     AND tags @> p_include_tags
     -- Post must not have any of the excluded tags
@@ -560,41 +712,58 @@ DECLARE
   v_post_count integer;
   v_page_count integer;
   v_last_page_start_id integer;
+  v_last_page_post_ids integer[];
 BEGIN
   SELECT * INTO p_include_tags, p_exclude_tags, v_valid FROM validate_tags(p_include_tags, p_exclude_tags);
   IF NOT v_valid THEN
     RETURN (1, 0)::page_info;
   END IF;
 
-  IF cardinality(p_include_tags) = 0 AND cardinality(p_exclude_tags) = 0 THEN
-    v_post_count := (SELECT reltuples FROM pg_class where relname = 'post');
-    v_page_count := CEIL(v_post_count / p_posts_per_page);
-    v_last_page_start_id := v_post_count - (v_page_count * p_posts_per_page);
-  ELSE
-    -- Get total post count in search
-    SELECT COALESCE(COUNT(*)::integer, 0) INTO v_post_count
-    FROM view_post
-    WHERE
-      -- Post must have all the included tags
-      tags @> p_include_tags
-      -- Post must not have any of the excluded tags
-      AND NOT tags && p_exclude_tags;
+  -- Make sure search cache is initialized
+  PERFORM initialize_search_cache(p_include_tags, p_exclude_tags);
 
-    -- Calculate page count
-    v_page_count := CEIL(v_post_count / p_posts_per_page);
+  -- Try to get cached search info
+  SELECT post_count, last_page_post_ids
+  INTO v_post_count, v_last_page_post_ids
+  FROM search_cache
+  WHERE tags = p_include_tags
+    AND exclude_tags = p_exclude_tags;
 
-    -- Get start id of last page
-    SELECT id INTO v_last_page_start_id
-    FROM view_post
-    WHERE
-      -- Post must have all the included tags
-      tags @> p_include_tags
-      -- Post must not have any of the excluded tags
-      AND NOT tags && p_exclude_tags
-    ORDER BY id ASC
-    LIMIT 1
-    OFFSET v_post_count - (v_page_count * p_posts_per_page);
+  -- If no posts exist in the search, return.
+  IF v_post_count IS NULL THEN
+    RETURN (1, 0)::page_info;
   END IF;
+
+  -- Calculate page count
+  v_page_count := CEIL(v_post_count::real / p_posts_per_page);
+
+  -- Calculate number of posts currently on last page
+  v_post_count := MOD(v_post_count, p_posts_per_page);
+
+  -- If necessary, get additional last page posts
+  IF cardinality(v_last_page_post_ids) < v_post_count THEN
+    v_last_page_post_ids := uniq(sort_asc(v_last_page_post_ids + array(
+      SELECT id
+      FROM view_post
+      WHERE
+        id > (SELECT COALESCE(MAX(id), 0) FROM unnest(v_last_page_post_ids) AS id)
+        -- Post must have all the included tags
+        AND tags @> p_include_tags
+        -- Post must not have any of the excluded tags
+        AND NOT tags && p_exclude_tags
+      ORDER BY id ASC
+      LIMIT p_posts_per_page - cardinality(v_last_page_post_ids)
+    )));
+
+    -- Update search cache with posts
+    UPDATE search_cache
+    SET last_page_post_ids = v_last_page_post_ids
+    WHERE tags = p_include_tags
+      AND exclude_tags = p_exclude_tags;
+  END IF;
+
+  -- Get last page start ID
+  v_last_page_start_id := v_last_page_post_ids[v_post_count];
 
   RETURN (v_page_count, v_last_page_start_id)::page_info;
 END;
