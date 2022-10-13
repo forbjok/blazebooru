@@ -10,7 +10,6 @@ interface Props {
 const props = defineProps<Props>();
 
 const emit = defineEmits<{
-  (e: "update:modelValue", value: string[]): void;
   (e: "submit-blank"): void;
 }>();
 

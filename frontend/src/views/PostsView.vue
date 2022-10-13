@@ -1,26 +1,76 @@
 <script setup lang="ts">
-import { onMounted } from "vue";
+import { onMounted, ref, watch } from "vue";
 
 import MainLayout from "@/components/MainLayout.vue";
 import Posts from "@/components/Posts.vue";
-import SearchPanel from "../components/SearchPanel.vue";
+import SearchForm from "../components/SearchForm.vue";
 
-import { useMainStore } from "@/stores/main";
+import { useMainStore, type Search } from "@/stores/main";
 
 const mainStore = useMainStore();
+
+const search = ref<Search>(mainStore.activeSearch);
+
+watch(
+  search,
+  (v) => {
+    mainStore.searchPosts(v);
+  },
+  { deep: true }
+);
 
 onMounted(async () => {
   await mainStore.initializePosts();
 });
+
+const includeTag = (tag: string) => {
+  if (search.value.tags.includes(tag)) {
+    return;
+  }
+
+  search.value.tags.push(tag);
+
+  // Sort tags alphabetically
+  search.value.tags.sort((a, b) => a.localeCompare(b));
+};
+
+const excludeTag = (tag: string) => {
+  if (search.value.exclude_tags.includes(tag)) {
+    return;
+  }
+
+  // If this tag is in the include tags, remove it from thereof
+  // instead of adding it to exclude tags.
+  if (search.value.tags.includes(tag)) {
+    const tagIndex = search.value.tags.findIndex((t) => t === tag);
+    search.value.tags.splice(tagIndex, 1);
+    return;
+  }
+
+  search.value.exclude_tags.push(tag);
+
+  // Sort tags alphabetically
+  search.value.exclude_tags.sort((a, b) => a.localeCompare(b));
+};
 </script>
 
 <template>
   <main :class="`theme-${mainStore.settings.theme}`">
     <MainLayout>
       <div class="layout">
-        <SearchPanel :initial_search="mainStore.activeSearch" class="side-panel" @search="mainStore.searchPosts" />
+        <div class="side-panel">
+          <SearchForm v-model="search" />
+          <label>Tags:</label>
+          <div class="tags">
+            <div v-for="(t, i) of mainStore.currentTags" :key="i" class="tag">
+              <button class="link-button" @click="includeTag(t)">+</button>
+              <button class="link-button" @click="excludeTag(t)">-</button>
+              <span class="tag-text" :class="{ included: search.tags.includes(t) }">{{ t }}</span>
+            </div>
+          </div>
+        </div>
         <div class="content">
-          <Posts v-if="mainStore.posts" :posts="mainStore.posts" />
+          <Posts v-if="mainStore.currentPosts" :posts="mainStore.currentPosts" />
           <div v-if="mainStore.pageCount > 1" class="pages">
             <button class="page first link-button" title="First page" @click="mainStore.loadPage(1)">&lt;&lt;</button>
             [
@@ -53,7 +103,39 @@ onMounted(async () => {
 .side-panel {
   flex-shrink: 1;
 
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+
   background-color: var(--color-panel-background);
+
+  padding: 1rem;
+
+  max-width: 300px;
+
+  .tags {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+
+    overflow: hidden;
+
+    .tag {
+      display: flex;
+      flex-direction: row;
+      gap: 0.4rem;
+
+      .tag-text {
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        overflow: hidden;
+
+        &.included {
+          color: var(--color-tag-included);
+        }
+      }
+    }
+  }
 }
 
 .content {

@@ -17,17 +17,37 @@ const POSTS_PER_PAGE = 28;
 const PAGES_SHOWN = 13;
 const HALF_PAGES_SHOWN = Math.floor(PAGES_SHOWN / 2);
 
+const EMPTY_SEARCH = {
+  tags: [],
+  exclude_tags: [],
+};
+
 export const useMainStore = defineStore("main", () => {
   const authStore = useAuthStore();
 
-  const activeSearch = ref<Search>();
+  const activeSearch = ref<Search>(EMPTY_SEARCH);
+
   let calculatedPages: Record<number, PageInfo> = {};
   const lastPage = ref<PageInfo>();
   const currentPage = ref(-1);
-  const posts = ref<Post[]>([]);
+  const currentPosts = ref<Post[]>([]);
   const settings = useStorage<Settings>("bb_settings", DEFAULT_SETTINGS);
 
   const pageCount = computed(() => lastPage.value?.no || 0);
+
+  const currentTags = computed(() => {
+    const tags: string[] = [];
+
+    // Collect all distinct tags from every currently shown post
+    for (const p of currentPosts.value) {
+      tags.push(...p.tags.filter((tag) => tags.findIndex((t) => t === tag) < 0));
+    }
+
+    // Sort tags alphabetically
+    tags.sort((a, b) => a.localeCompare(b));
+
+    return tags;
+  });
 
   const pages = computed(() => {
     const pages: number[] = [];
@@ -52,7 +72,7 @@ export const useMainStore = defineStore("main", () => {
   });
 
   function clearSearch() {
-    activeSearch.value = undefined;
+    activeSearch.value = EMPTY_SEARCH;
   }
 
   async function getPost(id: number) {
@@ -148,7 +168,7 @@ export const useMainStore = defineStore("main", () => {
       return;
     }
 
-    posts.value = await fetchPosts(search.tags, search.exclude_tags, start_id);
+    currentPosts.value = await fetchPosts(search.tags, search.exclude_tags, start_id);
   }
 
   function findNearestPage(page: number) {
@@ -218,21 +238,18 @@ export const useMainStore = defineStore("main", () => {
     currentPage.value = -1;
     lastPage.value = undefined;
     calculatedPages = [];
-    posts.value = [];
+    currentPosts.value = [];
 
     await loadPage(1);
     await calculateLastPage();
   }
 
   async function initializePosts() {
-    if (activeSearch.value) {
+    if (currentPosts.value.length > 0) {
       return;
     }
 
-    await searchPosts({
-      tags: [],
-      exclude_tags: [],
-    });
+    await searchPosts(EMPTY_SEARCH);
   }
 
   return {
@@ -240,7 +257,8 @@ export const useMainStore = defineStore("main", () => {
     currentPage,
     pageCount,
     pages,
-    posts,
+    currentPosts,
+    currentTags,
     settings,
     clearSearch,
     getPost,
