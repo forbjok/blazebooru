@@ -1,3 +1,4 @@
+use blazebooru_models::export as em;
 use blazebooru_models::local as lm;
 use blazebooru_models::view as vm;
 
@@ -29,6 +30,26 @@ impl From<dbm::User> for vm::User {
             id: u.id,
             created_at: u.created_at,
             name: u.name,
+        }
+    }
+}
+
+impl From<dbm::ViewPost> for em::Post {
+    fn from(p: dbm::ViewPost) -> Self {
+        em::Post {
+            created_at: p.created_at.unwrap(),
+            user_name: p.user_name.unwrap(),
+            title: p.title,
+            description: p.description,
+            source: p.source,
+            filename: p.filename.unwrap(),
+            size: p.size.unwrap(),
+            width: p.width.unwrap(),
+            height: p.height.unwrap(),
+            hash: p.hash.unwrap(),
+            ext: p.ext.unwrap(),
+            tn_ext: p.tn_ext.unwrap(),
+            tags: p.tags.unwrap(),
         }
     }
 }

@@ -3,6 +3,10 @@ use std::{borrow::Cow, path::PathBuf};
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
 
+use crate::view as vm;
+
+pub type Post = vm::Post;
+
 #[derive(Debug)]
 pub struct HashedFile {
     pub hash: String,

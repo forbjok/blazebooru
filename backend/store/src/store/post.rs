@@ -39,6 +39,15 @@ impl PgStore {
         Ok(post)
     }
 
+    pub async fn get_export_posts(&self) -> Result<Vec<dbm::ViewPost>, StoreError> {
+        let posts = sqlx::query_as!(dbm::ViewPost, r#"SELECT * FROM view_post ORDER BY id ASC;"#)
+            .fetch_all(&self.pool)
+            .await
+            .context("Error getting export posts from database")?;
+
+        Ok(posts)
+    }
+
     pub async fn get_view_posts(
         &self,
         include_tags: &[String],

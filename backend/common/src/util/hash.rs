@@ -4,7 +4,10 @@ use anyhow::Context;
 use bytes::{Buf, Bytes};
 use futures_core::Stream;
 use futures_util::StreamExt;
-use tokio::{fs, io::AsyncWriteExt};
+use tokio::{
+    fs,
+    io::{AsyncReadExt, AsyncWriteExt},
+};
 
 const BUFFER_SIZE: usize = 65536;
 
@@ -14,10 +17,14 @@ pub struct HashResult {
 }
 
 /// Read bytes from Bytes, calculate hash and write to a file
-pub async fn hash_blake3_to_file_from_bytes(bytes: Bytes, path: &Path) -> Result<HashResult, anyhow::Error> {
-    let mut file = fs::File::create(path)
+pub async fn hash_blake3_to_file_from_file(src_path: &Path, dst_path: &Path) -> Result<HashResult, anyhow::Error> {
+    let mut src_file = fs::File::open(src_path)
         .await
-        .with_context(|| format!("Opening file for writing: {}", path.display()))?;
+        .with_context(|| format!("Opening source file: {}", src_path.display()))?;
+
+    let mut dst_file = fs::File::create(dst_path)
+        .await
+        .with_context(|| format!("Creating destination file: {}", dst_path.display()))?;
 
     let mut hasher = blake3::Hasher::new();
 
@@ -25,9 +32,8 @@ pub async fn hash_blake3_to_file_from_bytes(bytes: Bytes, path: &Path) -> Result
 
     let mut total_size = 0;
 
-    let mut reader = bytes.reader();
     loop {
-        let bytes = reader.read(&mut buf)?;
+        let bytes = src_file.read(&mut buf).await?;
         if bytes == 0 {
             break;
         }
@@ -36,7 +42,7 @@ pub async fn hash_blake3_to_file_from_bytes(bytes: Bytes, path: &Path) -> Result
 
         let buf = &buf[..bytes];
         hasher.update(buf);
-        file.write_all(buf).await?;
+        dst_file.write_all(buf).await?;
     }
 
     let hash = hasher.finalize();

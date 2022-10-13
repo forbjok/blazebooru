@@ -3,6 +3,8 @@ members = [
   "blazebooru",
   "common",
   "core",
+  "export",
+  "import",
   "models",
   "store",
 ]

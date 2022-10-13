@@ -1,52 +1,30 @@
-use anyhow::Context;
+use std::path::Path;
 
+use blazebooru_models::export as em;
 use blazebooru_models::local as lm;
 use blazebooru_models::view as vm;
 use blazebooru_store::models as dbm;
 
 use blazebooru_store::transform::dbm_update_post_from_vm;
-use image::GenericImageView;
 
+use crate::image::ProcessFileResult;
 use crate::image::ProcessImageResult;
 
 use super::BlazeBooruCore;
-
-const THUMBNAIL_SIZE: u32 = 200;
 
 impl BlazeBooruCore {
     pub async fn create_post(&self, post: lm::NewPost<'_>) -> Result<i32, anyhow::Error> {
         let size = post.file.size as i32;
 
-        // Process image
-        let ProcessImageResult {
-            hash,
-            ext,
-            original_image_path,
-        } = self
-            .process_image(post.file, &post.filename, &self.public_original_path)
+        // Process file
+        let process_file_result = self
+            .process_file(post.file, &post.filename, &self.public_original_path)
             .await?;
 
-        // Open image file
-        let img = image::open(&original_image_path)?;
-        let (width, height) = img.dimensions();
+        let ProcessFileResult { hash, ext, .. } = &process_file_result;
 
-        // Generate thumbnail
-        let tn_ext = "jpg";
-        let thumbnail_filename = format!("{hash}.{tn_ext}");
-        let thumbnail_path = self.public_thumbnail_path.join(thumbnail_filename);
-
-        // If thumbnail does not already exist, create it.
-        let thumbnail_exists = thumbnail_path.exists();
-        if !thumbnail_exists {
-            // Only resize image if it exceeds the thumbnail dimensions
-            let tn_img = if width > THUMBNAIL_SIZE || height > THUMBNAIL_SIZE {
-                img.thumbnail(THUMBNAIL_SIZE, THUMBNAIL_SIZE)
-            } else {
-                img
-            };
-
-            tn_img.save(&thumbnail_path).context("Error saving thumbnail")?;
-        }
+        // Process image and generate thumbnail
+        let ProcessImageResult { width, height, tn_ext } = self.process_image(&process_file_result).await?;
 
         let db_post = dbm::NewPost {
             user_id: Some(post.user_id),
@@ -57,12 +35,46 @@ impl BlazeBooruCore {
             size: Some(size),
             width: Some(width as i32),
             height: Some(height as i32),
-            hash: Some(hash.into()),
+            hash: Some(hash.to_string()),
             ext: Some(ext.as_ref().into()),
             tn_ext: Some(tn_ext.into()),
         };
 
         let new_post_id = self.store.create_post(&db_post, &post.tags).await?;
+
+        Ok(new_post_id)
+    }
+
+    pub async fn import_post(&self, post: em::Post, user_id: i32, file: Option<&Path>) -> Result<i32, anyhow::Error> {
+        if let Some(path) = file {
+            let hashed_file = self.hash_file_to_temp_file(path).await?;
+
+            // Process file
+            let process_file_result = self
+                .process_file(hashed_file, &post.filename, &self.public_original_path)
+                .await?;
+
+            // Process image and generate thumbnail
+            self.process_image(&process_file_result).await?;
+        }
+
+        let db_post = dbm::NewPost {
+            user_id: Some(user_id),
+            title: post.title,
+            description: post.description,
+            source: post.source,
+            filename: Some(post.filename),
+            size: Some(post.size),
+            width: Some(post.width),
+            height: Some(post.height),
+            hash: Some(post.hash),
+            ext: Some(post.ext),
+            tn_ext: Some(post.tn_ext),
+        };
+
+        let tags: Vec<_> = post.tags.iter().map(|t| t.as_str()).collect();
+
+        let new_post_id = self.store.create_post(&db_post, &tags).await?;
 
         Ok(new_post_id)
     }
@@ -78,6 +90,24 @@ impl BlazeBooruCore {
         let success = self.store.update_post(&update_post, user_id).await?;
 
         Ok(success)
+    }
+
+    pub async fn get_export_posts(
+        &self,
+        include_tags: Vec<String>,
+        exclude_tags: Vec<String>,
+        start_id: i32,
+        limit: i32,
+    ) -> Result<Vec<em::Post>, anyhow::Error> {
+        let posts = self
+            .store
+            .get_view_posts(&include_tags, &exclude_tags, start_id, limit)
+            .await?
+            .into_iter()
+            .map(em::Post::from)
+            .collect();
+
+        Ok(posts)
     }
 
     pub async fn get_view_posts(

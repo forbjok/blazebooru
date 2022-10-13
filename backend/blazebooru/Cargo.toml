@@ -8,6 +8,8 @@ edition = "2021"
 [dependencies]
 blazebooru_common = { path = "../common" }
 blazebooru_core = { path = "../core" }
+blazebooru_export = { path = "../export" }
+blazebooru_import = { path = "../import" }
 blazebooru_models = { path = "../models" }
 anyhow = "1.0.65"
 axum = { version = "0.6.0-rc.2" , features = ["headers", "macros", "multipart"] }

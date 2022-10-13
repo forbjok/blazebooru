@@ -27,6 +27,12 @@ impl BlazeBooruCore {
         Ok(user.id)
     }
 
+    pub async fn get_user_by_name(&self, name: &str) -> Result<Option<vm::User>, anyhow::Error> {
+        let user = self.store.get_user_by_name(name).await?;
+
+        Ok(user.map(vm::User::from))
+    }
+
     pub async fn get_user_profile(&self, user_id: i32) -> Result<Option<vm::User>, anyhow::Error> {
         let user = self.store.get_user(user_id).await?;
 

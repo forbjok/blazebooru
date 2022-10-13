@@ -1,4 +1,4 @@
-use std::env;
+use std::{env, path::PathBuf};
 
 use clap::Parser;
 use tracing::{debug, info};
@@ -23,8 +23,40 @@ struct Opt {
 
 #[derive(Debug, Parser)]
 enum Command {
+    #[clap(about = "Export data")]
+    Export {
+        #[clap(subcommand)]
+        command: ExportCommand,
+    },
+
+    #[clap(about = "Import data")]
+    Import {
+        #[clap(subcommand)]
+        command: ImportCommand,
+    },
+
     #[clap(about = "Run BlazeBooru server")]
     Server,
+}
+
+#[derive(Debug, Parser)]
+enum ExportCommand {
+    #[clap(about = "Export data to JSON file")]
+    Json {
+        #[clap(help = "Path to JSON file")]
+        path: PathBuf,
+    },
+}
+
+#[derive(Debug, Parser)]
+enum ImportCommand {
+    #[clap(about = "Import data from JSON file")]
+    Json {
+        #[clap(help = "Path to JSON file")]
+        path: PathBuf,
+        #[clap(long = "user-name", short = 'u', help = "Path to JSON file")]
+        user_name: String,
+    },
 }
 
 #[tokio::main]
@@ -46,6 +78,8 @@ async fn main() -> Result<(), anyhow::Error> {
     }
 
     match opt.command {
+        Command::Export { command } => command::export(core, command).await?,
+        Command::Import { command } => command::import(core, command).await?,
         Command::Server => command::server(core).await?,
     };
 
