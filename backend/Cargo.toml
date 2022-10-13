@@ -1,14 +1,14 @@
 [workspace]
 members = [
+  "blazebooru",
   "common",
   "core",
   "models",
-  "server",
   "store",
 ]
 
 default-members = [
+  "blazebooru",
   "common",
   "core",
-  "server",
 ]
