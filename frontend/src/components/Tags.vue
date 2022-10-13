@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { toRefs } from "vue";
+import { computed, toRefs } from "vue";
 
 interface Props {
   tags: string[];
@@ -11,17 +11,21 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const emit = defineEmits<{
-  (e: "delete", index: number): void;
+  (e: "delete", tag: string): void;
 }>();
 
 const { tags, actions } = toRefs(props);
+
+const sortedTags = computed(() => {
+  return [...tags.value].sort((a, b) => a.localeCompare(b));
+});
 </script>
 
 <template>
   <div class="tags">
-    <div v-for="(t, i) of tags" :key="t" class="tag">
+    <div v-for="t of sortedTags" :key="t" class="tag">
       <span>{{ t }}</span
-      ><button v-if="actions" class="delete-button link-button" type="button" @click="emit('delete', i)">x</button>
+      ><button v-if="actions" class="delete-button link-button" type="button" @click="emit('delete', t)">x</button>
     </div>
   </div>
 </template>
@@ -44,5 +48,15 @@ $thumbnail-size: 200px;
   background-color: var(--color-tag-background);
 
   padding: 0.1rem 0.3rem;
+
+  cursor: default;
+}
+
+.include .tag {
+  background-color: var(--color-tag-include-background);
+}
+
+.exclude .tag {
+  background-color: var(--color-tag-exclude-background);
 }
 </style>

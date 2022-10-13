@@ -9,30 +9,26 @@ interface Props {
 
 const props = defineProps<Props>();
 
-const emit = defineEmits<{
-  (e: "submit-blank"): void;
-}>();
-
 const { modelValue: tags } = toRefs(props);
 
 const text = ref("");
 
 const addTag = (tag: string) => {
   // Don't add duplicate tags
-  if (tags.value.findIndex((t) => t === tag) >= 0) {
+  if (tags.value.includes(tag)) {
     return;
   }
 
   tags.value.push(tag);
 };
 
-const deleteTag = (index: number) => {
+const deleteTag = (tag: string) => {
+  const index = tags.value.findIndex((t) => t === tag);
   tags.value.splice(index, 1);
 };
 
 const submitTag = () => {
   if (!text.value) {
-    emit("submit-blank");
     return;
   }
 
@@ -46,7 +42,7 @@ const submitTag = () => {
     <Tags :tags="tags" :actions="true" @delete="deleteTag" />
     <div class="fields">
       <input type="text" v-model="text" placeholder="Tag" />
-      <input type="submit" value="Add tag" />
+      <input type="submit" value="Add" />
     </div>
   </form>
 </template>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { toRefs } from "vue";
+import { ref, toRefs } from "vue";
 
-import TagsEditor from "./TagsEditor.vue";
+import Tags from "./Tags.vue";
 
 import type { Search } from "@/stores/main";
 
@@ -12,15 +12,67 @@ interface Props {
 const props = defineProps<Props>();
 
 const { modelValue: search } = toRefs(props);
+
+const tags = search.value.tags;
+const exclude_tags = search.value.exclude_tags;
+const text = ref("");
+
+function removeItem<T>(array: T[], value: T) {
+  const index = array.findIndex((v) => v === value);
+  array.splice(index, 1);
+}
+
+const includeTag = (tag: string) => {
+  // Don't add duplicate tags
+  if (tags.includes(tag)) {
+    return;
+  }
+
+  // If it's in exclude tags, remove it from there.
+  if (exclude_tags.includes(tag)) {
+    removeItem(exclude_tags, tag);
+  }
+
+  tags.push(tag);
+};
+
+const excludeTag = (tag: string) => {
+  // Don't add duplicate tags
+  if (exclude_tags.includes(tag)) {
+    return;
+  }
+
+  // If it's in include tags, remove it from there.
+  if (tags.includes(tag)) {
+    removeItem(tags, tag);
+  }
+
+  exclude_tags.push(tag);
+};
+
+const submitTag = () => {
+  const tag = text.value.trim();
+  if (!tag) {
+    return;
+  }
+
+  if (tag.charAt(0) === "-") {
+    excludeTag(tag.slice(1));
+  } else {
+    includeTag(tag);
+  }
+
+  text.value = "";
+};
 </script>
 
 <template>
-  <div class="search-form">
-    <label>Search for tags</label>
-    <TagsEditor v-model="search.tags" />
-    <label>Exclude</label>
-    <TagsEditor v-model="search.exclude_tags" />
-  </div>
+  <form class="search-form" @submit.prevent="submitTag">
+    <label>Search</label>
+    <Tags :tags="search.tags" :actions="true" class="include" @delete="(t) => removeItem(tags, t)" />
+    <Tags :tags="search.exclude_tags" :actions="true" class="exclude" @delete="(t) => removeItem(exclude_tags, t)" />
+    <input type="text" v-model="text" placeholder="Tag" />
+  </form>
 </template>
 
 <style scoped lang="scss">
