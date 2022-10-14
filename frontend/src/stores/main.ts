@@ -151,6 +151,13 @@ export const useMainStore = defineStore("main", () => {
       headers: await authStore.getAuthHeaders(),
     });
 
+    if (
+      activeSearch.value.tags.every((t) => info.tags.includes(t)) &&
+      activeSearch.value.exclude_tags.every((t) => !info.tags.includes(t))
+    ) {
+      await refresh();
+    }
+
     return res.data;
   }
 
@@ -231,6 +238,10 @@ export const useMainStore = defineStore("main", () => {
     for (const p of pages) {
       calculatedPages[p.no] = p;
     }
+  }
+
+  async function refresh() {
+    await searchPosts(activeSearch.value);
   }
 
   async function searchPosts(search: Search) {
