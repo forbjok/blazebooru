@@ -109,7 +109,7 @@ impl BlazeBooruCore {
         let (width, height) = img.dimensions();
 
         // Generate thumbnail
-        let tn_ext = "jpg";
+        let tn_ext = "webp";
         let thumbnail_filename = format!("{hash}.{tn_ext}");
         let thumbnail_path = self.public_thumbnail_path.join(thumbnail_filename);
 
@@ -123,7 +123,10 @@ impl BlazeBooruCore {
                 img
             };
 
-            tn_img.save(&thumbnail_path).context("Error saving thumbnail")?;
+            tn_img
+                .into_rgba8()
+                .save(&thumbnail_path)
+                .context("Error saving thumbnail")?;
         }
 
         Ok(ProcessImageResult {
