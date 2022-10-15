@@ -17,6 +17,7 @@ use crate::auth::{AuthError, BlazeBooruAuth};
 pub struct BlazeBooruServer {
     pub auth: BlazeBooruAuth,
     pub core: BlazeBooruCore,
+    pub host_files: bool,
 }
 
 #[derive(Debug, Error)]
@@ -34,19 +35,22 @@ enum ApiError {
 }
 
 impl BlazeBooruServer {
-    pub fn new(auth: BlazeBooruAuth, core: BlazeBooruCore) -> Result<Self, anyhow::Error> {
-        Ok(Self { auth, core })
-    }
-
     pub async fn run_server(self, shutdown: impl Future<Output = ()>) -> Result<(), anyhow::Error> {
         let server = Arc::new(self);
 
         let api = api::router(server.clone());
 
-        let app = Router::new()
-            .nest("/api", api)
-            .merge(axum_extra::routing::SpaRouter::new("/f", &server.core.public_path))
-            .layer(tower_http::trace::TraceLayer::new_for_http());
+        let mut app = Router::new().nest("/api", api);
+
+        // If file hosting is enabled, host public files under /f.
+        // This should generally only be used for development.
+        // On a production deployment, the public file path should
+        // be served directly through a dedicated HTTP server instead.
+        if server.host_files {
+            app = app.merge(axum_extra::routing::SpaRouter::new("/f", &server.core.public_path));
+        }
+
+        app = app.layer(tower_http::trace::TraceLayer::new_for_http());
 
         let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
 
