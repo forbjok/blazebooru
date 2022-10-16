@@ -24,8 +24,10 @@ const sortedTags = computed(() => {
 <template>
   <div class="tags">
     <div v-for="t of sortedTags" :key="t" class="tag">
-      <span>{{ t }}</span
-      ><button v-if="actions" class="delete-button link-button" type="button" @click="emit('delete', t)">x</button>
+      <span class="tag-tag" :title="t">{{ t }}</span
+      ><button v-if="actions" class="delete-button link-button" type="button" title="Delete" @click="emit('delete', t)">
+        x
+      </button>
     </div>
   </div>
 </template>
@@ -38,6 +40,10 @@ $thumbnail-size: 200px;
   flex-direction: row;
   flex-wrap: wrap;
   gap: 0.2rem;
+
+  overflow: hidden;
+
+  max-width: 100%;
 }
 
 .tag {
@@ -49,7 +55,15 @@ $thumbnail-size: 200px;
 
   padding: 0.1rem 0.3rem;
 
+  max-width: 100%;
+
   cursor: default;
+
+  .tag-tag {
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+  }
 }
 
 .include .tag {

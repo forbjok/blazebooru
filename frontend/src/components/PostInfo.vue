@@ -79,11 +79,14 @@ const update = () => {
     </div>
     <hr />
     <div v-if="!editing" class="post-info">
-      <div v-if="post.title" class="title">
+      <div v-if="post.title" class="title" :title="post.title">
         {{ post.title }}
       </div>
       <div v-if="post.source" class="source">Source: {{ post.source }}</div>
-      <div v-if="post.tags">Tags: <Tags :tags="post.tags" /></div>
+      <div v-if="post.tags" class="tags">
+        Tags:
+        <Tags :tags="post.tags" />
+      </div>
       <hr />
       <div v-if="post.description" class="description">
         {{ post.description }}
@@ -148,6 +151,14 @@ const update = () => {
 
 .title {
   font-size: 2rem;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.tags {
+  overflow: hidden;
 }
 
 .description {
@@ -158,7 +169,6 @@ const update = () => {
 .edit-form {
   display: flex;
   flex-direction: column;
-  align-items: start;
   gap: 0.5rem;
 }
 

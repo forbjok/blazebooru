@@ -159,16 +159,16 @@ const postComment = async () => {
 .comment-form {
   display: flex;
   flex-direction: column;
-  align-items: start;
   gap: 0.5rem;
 
   .comment-field {
-    resize: both;
+    resize: vertical;
 
     width: 30rem;
     height: 5rem;
 
-    max-width: 100%;
+    width: 100%;
+    min-height: 2rem;
   }
 
   .form-buttons {

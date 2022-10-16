@@ -53,6 +53,10 @@ const submitTag = () => {
   flex-direction: column;
   align-items: start;
   gap: 0.2rem;
+
+  overflow: hidden;
+
+  max-width: 100%;
 }
 
 .fields {
