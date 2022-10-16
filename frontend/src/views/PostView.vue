@@ -42,7 +42,7 @@ onMounted(async () => {
 });
 
 const fetchPost = async () => {
-  post.value = await postStore.getPost(id.value);
+  post.value = await mainStore.getPost(id.value);
   comments.value = await postStore.getPostComments(id.value);
 };
 

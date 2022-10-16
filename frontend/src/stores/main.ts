@@ -77,6 +77,12 @@ export const useMainStore = defineStore("main", () => {
 
   async function getPost(id: number) {
     const res = await axios.get<Post>(`/api/post/${id}`);
+    const post = res.data;
+
+    const existingIndex = currentPosts.value.findIndex((p) => p.id === id);
+    if (existingIndex >= 0) {
+      currentPosts.value[existingIndex] = post;
+    }
 
     return res.data;
   }

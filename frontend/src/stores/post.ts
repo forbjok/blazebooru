@@ -5,18 +5,12 @@ import axios from "axios";
 import { useAuthStore } from "./auth";
 
 import type { Comment } from "@/models/api/comment";
-import type { Post } from "@/models/api/post";
 import type { NewPostComment } from "@/models/api/comment";
 
 export const usePostStore = defineStore("post", () => {
   const authStore = useAuthStore();
 
   const newComment = ref("");
-
-  async function getPost(id: number) {
-    const res = await axios.get<Post>(`/api/post/${id}`);
-    return res.data;
-  }
 
   async function getPostComments(post_id: number) {
     const res = await axios.get<Comment[]>(`/api/post/${post_id}/comments`);
@@ -45,7 +39,6 @@ export const usePostStore = defineStore("post", () => {
 
   return {
     newComment,
-    getPost,
     getPostComments,
     postNewComment,
   };
