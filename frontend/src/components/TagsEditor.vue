@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref, toRefs } from "vue";
+import { toRefs } from "vue";
 
 import Tags from "@/components/Tags.vue";
-import { normalize_tag } from "@/utils/tag";
+import TagEntry from "./TagEntry.vue";
 
 interface Props {
   modelValue: string[];
@@ -12,11 +12,7 @@ const props = defineProps<Props>();
 
 const { modelValue: tags } = toRefs(props);
 
-const text = ref("");
-
 const addTag = (tag: string) => {
-  tag = normalize_tag(tag);
-
   // Don't add blank tag
   if (tag.length === 0) {
     return;
@@ -35,24 +31,22 @@ const deleteTag = (tag: string) => {
   tags.value.splice(index, 1);
 };
 
-const submitTag = () => {
-  if (!text.value) {
-    return;
+const enterTags = (tags: string[], exclude_tags: string[]) => {
+  for (const t of tags) {
+    addTag(t);
   }
 
-  addTag(text.value);
-  text.value = "";
+  for (const t of exclude_tags) {
+    deleteTag(t);
+  }
 };
 </script>
 
 <template>
-  <form class="tags-editor" @submit.prevent="submitTag">
+  <div class="tags-editor">
     <Tags :tags="tags" :actions="true" @delete="deleteTag" />
-    <div class="fields">
-      <input type="text" v-model="text" placeholder="Tag" />
-      <input type="submit" value="Add" />
-    </div>
-  </form>
+    <TagEntry :button="true" @enter="enterTags" />
+  </div>
 </template>
 
 <style scoped lang="scss">
@@ -65,11 +59,5 @@ const submitTag = () => {
   overflow: hidden;
 
   max-width: 100%;
-}
-
-.fields {
-  display: flex;
-  flex-direction: row;
-  gap: 0.1rem;
 }
 </style>

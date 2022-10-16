@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { ref, toRefs } from "vue";
+import { toRefs } from "vue";
 
 import Tags from "./Tags.vue";
 
 import type { Search } from "@/stores/main";
 
-import { normalize_tag } from "@/utils/tag";
+import TagEntry from "./TagEntry.vue";
 
 interface Props {
   modelValue: Search;
@@ -17,7 +17,6 @@ const { modelValue: search } = toRefs(props);
 
 const tags = search.value.tags;
 const exclude_tags = search.value.exclude_tags;
-const text = ref("");
 
 function removeItem<T>(array: T[], value: T) {
   const index = array.findIndex((v) => v === value);
@@ -52,29 +51,24 @@ const excludeTag = (tag: string) => {
   exclude_tags.push(tag);
 };
 
-const submitTag = () => {
-  const tag = normalize_tag(text.value);
-  text.value = "";
-
-  if (!tag) {
-    return;
+const enterTags = (tags: string[], exclude_tags: string[]) => {
+  for (const t of tags) {
+    includeTag(t);
   }
 
-  if (tag.charAt(0) === "-") {
-    excludeTag(tag.slice(1));
-  } else {
-    includeTag(tag);
+  for (const t of exclude_tags) {
+    excludeTag(t);
   }
 };
 </script>
 
 <template>
-  <form class="search-form" @submit.prevent="submitTag">
+  <div class="search-form">
     <label>Search</label>
     <Tags :tags="search.tags" :actions="true" class="include" @delete="(t) => removeItem(tags, t)" />
     <Tags :tags="search.exclude_tags" :actions="true" class="exclude" @delete="(t) => removeItem(exclude_tags, t)" />
-    <input type="text" v-model="text" placeholder="Tag" />
-  </form>
+    <TagEntry @enter="enterTags" />
+  </div>
 </template>
 
 <style scoped lang="scss">
