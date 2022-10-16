@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive, toRefs } from "vue";
+import { computed, reactive, ref, toRefs } from "vue";
 import { filesize } from "filesize";
 
 import TagsEditor from "./TagsEditor.vue";
@@ -29,6 +29,8 @@ const emit = defineEmits<{
 }>();
 
 const { disabled } = toRefs(props);
+
+const tagsEditor = ref<typeof TagsEditor>();
 
 const vm = reactive<ViewModel>({
   title: "",
@@ -72,6 +74,9 @@ const upload = () => {
     return;
   }
 
+  // Force submit the tag entry
+  tagsEditor.value?.submit();
+
   let info: PostInfo = {
     tags: vm.tags,
   };
@@ -100,7 +105,7 @@ const upload = () => {
     <input name="source" type="text" v-model="vm.source" placeholder="Source" title="Source" :disabled="disabled" />
 
     <label>Tags</label>
-    <TagsEditor v-model="vm.tags" />
+    <TagsEditor ref="tagsEditor" v-model="vm.tags" />
 
     <label>Description</label>
     <textarea
@@ -112,7 +117,7 @@ const upload = () => {
       wrap="soft"
     ></textarea>
 
-    <input name="file" type="file" accept="image/*" @change="fileSelected" :disabled="disabled" />
+    <input name="file" type="file" accept="image/*" @change="fileSelected" :disabled="disabled" required />
 
     <input :disabled="!canSubmit" class="submit-button" type="submit" value="Upload" />
   </form>

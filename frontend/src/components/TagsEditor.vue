@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { toRefs } from "vue";
+import { ref, toRefs } from "vue";
 
 import Tags from "@/components/Tags.vue";
 import TagEntry from "./TagEntry.vue";
@@ -11,6 +11,8 @@ interface Props {
 const props = defineProps<Props>();
 
 const { modelValue: tags } = toRefs(props);
+
+const tagEntry = ref<typeof TagEntry>();
 
 const addTag = (tag: string) => {
   // Don't add blank tag
@@ -40,12 +42,20 @@ const enterTags = (tags: string[], exclude_tags: string[]) => {
     deleteTag(t);
   }
 };
+
+const submit = () => {
+  tagEntry.value?.submit();
+};
+
+defineExpose({
+  submit,
+});
 </script>
 
 <template>
   <div class="tags-editor">
     <Tags :tags="tags" :actions="true" @delete="deleteTag" />
-    <TagEntry :button="true" @enter="enterTags" />
+    <TagEntry ref="tagEntry" :button="true" @enter="enterTags" />
   </div>
 </template>
 

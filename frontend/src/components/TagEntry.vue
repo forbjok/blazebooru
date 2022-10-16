@@ -59,6 +59,10 @@ const submit = () => {
   emit("enter", tags, exclude_tags);
   text.value = "";
 };
+
+defineExpose({
+  submit,
+});
 </script>
 
 <template>

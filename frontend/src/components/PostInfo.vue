@@ -23,6 +23,8 @@ const emit = defineEmits<{
 
 const { post } = toRefs(props);
 
+const tagsEditor = ref<typeof TagsEditor>();
+
 const editing = ref<PostInfo>();
 
 const toggleEdit = () => {
@@ -48,6 +50,9 @@ const update = () => {
   if (!_editing) {
     return;
   }
+
+  // Force submit the tag entry
+  tagsEditor.value?.submit();
 
   const add_tags = _editing.tags.filter((t) => !post.value.tags.includes(t));
   const remove_tags = post.value.tags.filter((t) => !_editing.tags.includes(t));
@@ -108,7 +113,7 @@ const deletePost = () => {
       <input name="source" type="text" v-model="editing.source" placeholder="Source" title="Source" />
 
       <label>Tags</label>
-      <TagsEditor v-model="editing.tags" />
+      <TagsEditor ref="tagsEditor" v-model="editing.tags" />
 
       <label>Description</label>
       <textarea
