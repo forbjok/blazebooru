@@ -17,7 +17,7 @@ use crate::auth::{AuthError, BlazeBooruAuth};
 pub struct BlazeBooruServer {
     pub auth: BlazeBooruAuth,
     pub core: BlazeBooruCore,
-    pub host_files: bool,
+    pub serve_files: bool,
 }
 
 #[derive(Debug, Error)]
@@ -42,11 +42,11 @@ impl BlazeBooruServer {
 
         let mut app = Router::new().nest("/api", api);
 
-        // If file hosting is enabled, host public files under /f.
+        // If file serving is enabled, serve public files under /f.
         // This should generally only be used for development.
         // On a production deployment, the public file path should
         // be served directly through a dedicated HTTP server instead.
-        if server.host_files {
+        if server.serve_files {
             app = app.merge(axum_extra::routing::SpaRouter::new("/f", &server.core.public_path));
         }
 

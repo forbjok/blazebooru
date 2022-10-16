@@ -37,8 +37,8 @@ enum Command {
 
     #[clap(about = "Run BlazeBooru server")]
     Server {
-        #[clap(long = "host-files", help = "Host public files (recommended only for development)")]
-        host_files: bool,
+        #[clap(long = "serve-files", help = "Serve public files (recommended only for development)")]
+        serve_files: bool,
     },
 }
 
@@ -83,7 +83,7 @@ async fn main() -> Result<(), anyhow::Error> {
     match opt.command {
         Command::Export { command } => command::export(core, command).await?,
         Command::Import { command } => command::import(core, command).await?,
-        Command::Server { host_files } => command::server(core, host_files).await?,
+        Command::Server { serve_files } => command::server(core, serve_files).await?,
     };
 
     Ok(())
