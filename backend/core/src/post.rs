@@ -85,6 +85,12 @@ impl BlazeBooruCore {
         Ok(post)
     }
 
+    pub async fn get_view_post_by_hash(&self, hash: &str) -> Result<Option<vm::Post>, anyhow::Error> {
+        let post = self.store.get_view_post_by_hash(hash).await?.map(vm::Post::from);
+
+        Ok(post)
+    }
+
     pub async fn update_post(&self, id: i32, request: vm::UpdatePost, user_id: i32) -> Result<bool, anyhow::Error> {
         let update_post = dbm_update_post_from_vm(id, request);
         let success = self.store.update_post(&update_post, user_id).await?;

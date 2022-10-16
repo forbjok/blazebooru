@@ -74,6 +74,7 @@ pub fn router(server: Arc<BlazeBooruServer>) -> Router<Arc<BlazeBooruServer>> {
         .route("/:id/update", post(update_post))
         .route("/:id/comments", get(get_post_comments))
         .route("/:id/comments/new", post(post_comment))
+        .route("/by-hash/:hash", get(get_view_post_by_hash))
         .route("/pages", get(calculate_pages))
         .route("/pages/last", get(calculate_last_page))
         .route("/upload", post(upload_post))
@@ -85,6 +86,20 @@ async fn get_view_post(
     Path(id): Path<i32>,
 ) -> Result<Json<vm::Post>, ApiError> {
     let post = server.core.get_view_post(id).await.context("Error getting view post")?;
+
+    Ok(Json(post.ok_or(ApiError::NotFound)?))
+}
+
+#[axum::debug_handler(state = Arc<BlazeBooruServer>)]
+async fn get_view_post_by_hash(
+    State(server): State<Arc<BlazeBooruServer>>,
+    Path(hash): Path<String>,
+) -> Result<Json<vm::Post>, ApiError> {
+    let post = server
+        .core
+        .get_view_post_by_hash(&hash)
+        .await
+        .context("Error getting view post by hash")?;
 
     Ok(Json(post.ok_or(ApiError::NotFound)?))
 }

@@ -39,6 +39,15 @@ impl PgStore {
         Ok(post)
     }
 
+    pub async fn get_view_post_by_hash(&self, hash: &str) -> Result<Option<dbm::ViewPost>, StoreError> {
+        let post = sqlx::query_as!(dbm::ViewPost, r#"SELECT * FROM view_post WHERE hash = $1;"#, hash)
+            .fetch_optional(&self.pool)
+            .await
+            .context("Error getting view post by hash from database")?;
+
+        Ok(post)
+    }
+
     pub async fn get_export_posts(&self) -> Result<Vec<dbm::ViewPost>, StoreError> {
         let posts = sqlx::query_as!(dbm::ViewPost, r#"SELECT * FROM view_post ORDER BY id ASC;"#)
             .fetch_all(&self.pool)
