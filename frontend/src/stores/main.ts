@@ -14,8 +14,7 @@ export interface Search {
 }
 
 const POSTS_PER_PAGE = 28;
-const PAGES_SHOWN = 13;
-const HALF_PAGES_SHOWN = Math.floor(PAGES_SHOWN / 2);
+const CALCULATE_PAGES = 12;
 
 const EMPTY_SEARCH = {
   tags: [],
@@ -49,27 +48,31 @@ export const useMainStore = defineStore("main", () => {
     return tags;
   });
 
-  const pages = computed(() => {
-    const pages: number[] = [];
+  function getPageNumbers(max_pages: number) {
+    const half_max_pages = max_pages / 2;
 
-    let first_page = Math.max(1, currentPage.value - HALF_PAGES_SHOWN);
-    let last_page = Math.min(pageCount.value, currentPage.value + HALF_PAGES_SHOWN);
+    return computed(() => {
+      const pages: number[] = [];
 
-    const page_diff = last_page - first_page;
-    if (page_diff < PAGES_SHOWN) {
-      if (first_page === 1) {
-        last_page = Math.min(pageCount.value, last_page + (PAGES_SHOWN - page_diff));
-      } else {
-        first_page = Math.max(1, first_page - (PAGES_SHOWN - page_diff));
+      let first_page = Math.max(1, currentPage.value - half_max_pages);
+      let last_page = Math.min(pageCount.value, currentPage.value + half_max_pages);
+
+      const page_diff = last_page - first_page;
+      if (page_diff < max_pages) {
+        if (first_page === 1) {
+          last_page = Math.min(pageCount.value, last_page + (max_pages - page_diff));
+        } else {
+          first_page = Math.max(1, first_page - (max_pages - page_diff));
+        }
       }
-    }
 
-    for (let i = first_page; i <= last_page; ++i) {
-      pages.push(i);
-    }
+      for (let i = first_page; i <= last_page; ++i) {
+        pages.push(i);
+      }
 
-    return pages;
-  });
+      return pages;
+    });
+  }
 
   function clearSearch() {
     activeSearch.value = EMPTY_SEARCH;
@@ -117,7 +120,7 @@ export const useMainStore = defineStore("main", () => {
         t,
         e,
         ppp: POSTS_PER_PAGE,
-        pc: page_count || PAGES_SHOWN,
+        pc: page_count || CALCULATE_PAGES,
         opno: origin_page?.no,
         opsid: origin_page?.start_id,
       },
@@ -211,12 +214,13 @@ export const useMainStore = defineStore("main", () => {
     if (nearestPage.no < page) {
       const stopAtPage = nearestPages.find((pi) => pi.no > page);
 
-      const toPageNo = stopAtPage && stopAtPage.no < page + PAGES_SHOWN ? stopAtPage.no : page + PAGES_SHOWN;
+      const toPageNo = stopAtPage && stopAtPage.no < page + CALCULATE_PAGES ? stopAtPage.no : page + CALCULATE_PAGES;
       return { nearestPage, length: toPageNo - nearestPage.no };
     } else {
       const startAtPage = nearestPages.find((pi) => pi.no < page);
 
-      const fromPageNo = startAtPage && startAtPage.no > page - PAGES_SHOWN ? startAtPage.no : page - PAGES_SHOWN;
+      const fromPageNo =
+        startAtPage && startAtPage.no > page - CALCULATE_PAGES ? startAtPage.no : page - CALCULATE_PAGES;
       return { nearestPage, length: fromPageNo - nearestPage.no };
     }
   }
@@ -232,7 +236,7 @@ export const useMainStore = defineStore("main", () => {
       const { nearestPage: originPage, length } = nearestPage;
       await calculatePages(originPage, length);
     } else {
-      await calculatePages(undefined, page + PAGES_SHOWN);
+      await calculatePages(undefined, page + CALCULATE_PAGES);
     }
 
     return calculatedPages[page];
@@ -290,10 +294,10 @@ export const useMainStore = defineStore("main", () => {
     activeSearch,
     currentPage,
     pageCount,
-    pages,
     currentPosts,
     currentTags,
     settings,
+    getPageNumbers,
     clearSearch,
     getPost,
     initializePosts,

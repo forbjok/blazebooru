@@ -6,4 +6,10 @@ import { RouterView } from "vue-router";
   <RouterView />
 </template>
 
-<style scoped lang="scss"></style>
+<style scoped lang="scss">
+@media only screen and (max-width: 480px) {
+  main {
+    max-width: 100vw;
+  }
+}
+</style>

@@ -14,6 +14,8 @@ const router = useRouter();
 const mainStore = useMainStore();
 
 const search = ref<Search>(mainStore.activeSearch);
+const pageNumbers = mainStore.getPageNumbers(12);
+const pageNumbersMobile = mainStore.getPageNumbers(4);
 
 watch(
   search,
@@ -77,7 +79,8 @@ const excludeTag = (tag: string) => {
 <template>
   <main :class="`theme-${mainStore.settings.theme}`">
     <MainLayout>
-      <div class="layout">
+      <!-- Desktop -->
+      <div class="layout desktop">
         <div class="side-panel">
           <SearchForm v-model="search" />
           <label>Tags:</label>
@@ -97,7 +100,7 @@ const excludeTag = (tag: string) => {
             >
             [
             <router-link
-              v-for="p in mainStore.pages"
+              v-for="p in pageNumbers"
               :key="p"
               :to="{ name: 'browse', query: { p } }"
               class="page"
@@ -112,77 +115,143 @@ const excludeTag = (tag: string) => {
           </div>
         </div>
       </div>
+
+      <!-- Mobile -->
+      <div class="layout mobile">
+        <div class="content">
+          <Posts v-if="mainStore.currentPosts" :posts="mainStore.currentPosts" />
+        </div>
+        <div class="search-panel">
+          <div v-if="mainStore.pageCount > 1" class="pages">
+            <router-link :to="{ name: 'browse', query: { p: 1 } }" class="page first" title="First page"
+              >&lt;&lt;</router-link
+            >
+            [
+            <router-link
+              v-for="p in pageNumbersMobile"
+              :key="p"
+              :to="{ name: 'browse', query: { p } }"
+              class="page"
+              :class="{ current: p === mainStore.currentPage }"
+            >
+              {{ p }}
+            </router-link>
+            ]
+            <router-link :to="{ name: 'browse', query: { p: mainStore.pageCount } }" class="page last" title="Last page"
+              >>></router-link
+            >
+          </div>
+          <SearchForm v-model="search" />
+        </div>
+      </div>
     </MainLayout>
   </main>
 </template>
 
 <style scoped lang="scss">
-.layout {
+.layout.desktop {
   display: flex;
   flex-direction: row;
 
   height: 100%;
-}
 
-.side-panel {
-  flex-shrink: 1;
+  .side-panel {
+    flex-shrink: 1;
 
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-
-  background-color: var(--color-panel-background);
-
-  padding: 1rem;
-
-  max-width: 300px;
-
-  .tags {
     display: flex;
     flex-direction: column;
-    gap: 0.4rem;
+    gap: 1rem;
 
-    overflow: hidden;
+    background-color: var(--color-panel-background);
 
-    .tag {
+    padding: 1rem;
+
+    max-width: 300px;
+
+    .tags {
       display: flex;
-      flex-direction: row;
+      flex-direction: column;
       gap: 0.4rem;
 
-      .tag-text {
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        overflow: hidden;
+      overflow: hidden;
 
-        &.included {
-          color: var(--color-tag-included);
+      .tag {
+        display: flex;
+        flex-direction: row;
+        gap: 0.4rem;
+
+        .tag-text {
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          overflow: hidden;
+
+          &.included {
+            color: var(--color-tag-included);
+          }
         }
+      }
+    }
+  }
+
+  .content {
+    flex-grow: 1;
+
+    padding-bottom: 3rem;
+  }
+
+  .pages {
+    position: fixed;
+    left: 50%;
+    bottom: 1rem;
+
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.4rem;
+
+    background-color: var(--color-pages-background);
+
+    padding: 0.2rem;
+
+    transform: translateX(-50%);
+
+    .page {
+      padding: 0 0.2rem;
+
+      &.current {
+        background-color: var(--color-current-page-background);
+
+        font-size: 1.2rem;
       }
     }
   }
 }
 
-.content {
-  flex-grow: 1;
+.layout.mobile {
+  flex-direction: column;
 
-  padding-bottom: 3rem;
-}
+  padding-bottom: 7rem;
 
-.pages {
-  position: fixed;
-  left: 50%;
-  bottom: 1rem;
+  .search-panel {
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    right: 0;
 
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 0.4rem;
+    background-color: var(--color-panel-background);
 
-  background-color: var(--color-pages-background);
+    padding: 0.5rem;
+  }
 
-  padding: 0.2rem;
+  .pages {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
 
-  transform: translateX(-50%);
+    padding: 0.4rem;
+  }
 
   .page {
     padding: 0 0.2rem;

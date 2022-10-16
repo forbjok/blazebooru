@@ -72,7 +72,8 @@ const postComment = async () => {
 <template>
   <main :class="`theme-${mainStore.settings.theme}`">
     <MainLayout>
-      <div class="layout-row">
+      <!-- Desktop -->
+      <div class="layout desktop">
         <div class="layout-side">
           <PostInfo v-if="post" :post="post" :can_edit="can_edit" @delete="deletePost" @update="updatePost" />
           <label>Comments</label>
@@ -101,42 +102,40 @@ const postComment = async () => {
           </div>
         </div>
       </div>
+
+      <!-- Mobile -->
+      <div class="layout mobile">
+        <div class="image">
+          <a :href="file_url" target="_blank">
+            <img :src="file_url" alt="Image" />
+          </a>
+        </div>
+        <div class="post-info">
+          <PostInfo v-if="post" :post="post" :can_edit="can_edit" @delete="deletePost" @update="updatePost" />
+          <label>Comments</label>
+          <div class="post-comments">
+            <PostComment v-for="c in comments" :key="c.id" :comment="c" />
+          </div>
+          <form class="comment-form" @submit.prevent="postComment">
+            <textarea
+              class="comment-field"
+              name="comment"
+              v-model="postStore.newComment"
+              placeholder="Comment"
+              wrap="soft"
+            ></textarea>
+
+            <div class="form-buttons">
+              <input class="post-button" type="submit" value="Post comment" :disabled="!postStore.newComment" />
+            </div>
+          </form>
+        </div>
+      </div>
     </MainLayout>
   </main>
 </template>
 
 <style scoped lang="scss">
-.layout-row {
-  display: flex;
-  flex-direction: row;
-}
-
-.layout-side {
-  flex-shrink: 1;
-
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-
-  background-color: var(--color-panel-background);
-  border-right: 1px solid var(--color-divider);
-
-  padding: 1rem;
-
-  width: 25%;
-  min-width: 18rem;
-  min-height: 100vh;
-}
-
-.layout-content {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-
-  padding-top: 1rem;
-  padding-left: 1rem;
-}
-
 .post-comments {
   display: flex;
   flex-direction: column;
@@ -153,11 +152,6 @@ const postComment = async () => {
     background-color: var(--color-post-background);
 
     padding: 0.2rem;
-  }
-
-  &:not(.expand) img {
-    max-width: 90vw;
-    max-height: 94vh;
   }
 }
 
@@ -182,6 +176,66 @@ const postComment = async () => {
     flex-direction: row;
     align-self: end;
     gap: 1rem;
+  }
+}
+
+.layout.desktop {
+  display: flex;
+  flex-direction: row;
+
+  .layout-side {
+    flex-shrink: 1;
+
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+
+    background-color: var(--color-panel-background);
+    border-right: 1px solid var(--color-divider);
+
+    padding: 1rem;
+
+    width: 25%;
+    min-width: 18rem;
+    min-height: 100vh;
+  }
+
+  .layout-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+
+    padding-top: 1rem;
+    padding-left: 1rem;
+  }
+
+  .image {
+    &:not(.expand) img {
+      max-width: 90vw;
+      max-height: 94vh;
+    }
+  }
+}
+
+.layout.mobile {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+
+  .post-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+
+    padding: 0.4rem;
+
+    max-width: 100vw;
+    overflow: hidden;
+  }
+
+  .image img {
+    max-width: 100vw;
+    max-height: 100vh;
   }
 }
 </style>

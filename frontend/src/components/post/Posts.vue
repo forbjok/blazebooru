@@ -27,8 +27,6 @@ const { posts } = toRefs(props);
 </template>
 
 <style scoped lang="scss">
-$thumbnail-size: 200px;
-
 .posts {
   display: flex;
   flex-direction: row;
@@ -44,7 +42,12 @@ $thumbnail-size: 200px;
   justify-content: center;
 
   background-color: var(--color-post-background);
-  width: $thumbnail-size;
-  height: $thumbnail-size;
+  width: var(--thumbnail-size);
+  height: var(--thumbnail-size);
+
+  img {
+    max-width: var(--thumbnail-size);
+    max-height: var(--thumbnail-size);
+  }
 }
 </style>
