@@ -15,9 +15,18 @@ const vm = reactive<LoginRequest>({
 <template>
   <form class="register-form" @submit.prevent="emit('register', vm)">
     <label>Username</label>
-    <input name="user_name" type="text" v-model="vm.name" placeholder="Username" />
+    <input
+      v-model="vm.name"
+      name="user_name"
+      type="text"
+      pattern="^[\d\w_]+$"
+      placeholder="Username"
+      title="Only alphanumeric characters and underscore allowed."
+      required
+    />
+
     <label>Password</label>
-    <input name="password" type="password" v-model="vm.password" placeholder="Password" />
+    <input v-model="vm.password" name="password" type="password" placeholder="Password" required />
 
     <input class="submit-button" type="submit" value="Register" />
   </form>

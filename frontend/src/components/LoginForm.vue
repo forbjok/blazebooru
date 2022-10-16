@@ -15,9 +15,9 @@ const vm = reactive<LoginRequest>({
 <template>
   <form class="login-form" @submit.prevent="emit('log-in', vm)">
     <label>Username</label>
-    <input name="user_name" type="text" v-model="vm.name" placeholder="Username" />
+    <input name="user_name" type="text" v-model="vm.name" pattern="^[\d\w_]+$" placeholder="Username" required />
     <label>Password</label>
-    <input name="password" type="password" v-model="vm.password" placeholder="Password" />
+    <input name="password" type="password" v-model="vm.password" placeholder="Password" required />
 
     <input class="submit-button" type="submit" value="Log in" />
   </form>

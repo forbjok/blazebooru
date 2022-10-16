@@ -3,14 +3,29 @@ use argon2::{
     password_hash::{rand_core::OsRng, SaltString},
     Argon2, PasswordHasher,
 };
+use once_cell::sync::Lazy;
+use regex::Regex;
+
 use blazebooru_models::local as lm;
 use blazebooru_models::view as vm;
 use blazebooru_store::models as dbm;
 
 use super::BlazeBooruCore;
 
+static RE_VALID_USERNAME: Lazy<Regex> = Lazy::new(|| Regex::new(r#"^[\d\w_]+$"#).unwrap());
+
 impl BlazeBooruCore {
     pub async fn create_user(&self, user: lm::NewUser<'_>) -> Result<i32, anyhow::Error> {
+        if user.password.is_empty() {
+            return Err(anyhow!("Password can not be blank"));
+        }
+
+        if !RE_VALID_USERNAME.is_match(&user.name) {
+            return Err(anyhow!(
+                "Username can only contain alphanumeric characters and underscores"
+            ));
+        }
+
         let argon2 = Argon2::default();
         let salt = SaltString::generate(&mut OsRng);
         let password_hash = argon2
