@@ -1,13 +1,15 @@
 @import url(https://fonts.googleapis.com/css?family=Roboto);
 
+body {
+  font-family: "Roboto", sans-serif;
+  font-size: 1rem;
+}
+
 main {
   display: inline-block;
 
   background-color: var(--color-default-background);
   color: var(--color-default-text);
-
-  font-family: "Roboto", sans-serif;
-  font-size: 1rem;
 
   min-width: 100%;
   min-height: 100vh;

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, toRefs } from "vue";
 
+import ConfirmDialog from "@/components/common/ConfirmDialog.vue";
 import Tags from "@/components/tag/Tags.vue";
 import TagsEditor from "@/components/tag/TagsEditor.vue";
 
@@ -23,6 +24,7 @@ const emit = defineEmits<{
 
 const { post } = toRefs(props);
 
+const confirmDelete = ref<typeof ConfirmDialog>();
 const tagsEditor = ref<typeof TagsEditor>();
 
 const editing = ref<PostInfo>();
@@ -82,7 +84,7 @@ const deletePost = () => {
       <div class="uploader" title="Uploader"><i class="fa-solid fa-user"></i> {{ post.user_name }}</div>
       <div class="actions">
         <a :href="make_image_path(post)" :download="post.filename"><i class="fa-solid fa-download"></i> Download</a>
-        <button v-if="can_edit" class="delete-button link-button" @click="deletePost">
+        <button v-if="can_edit" class="delete-button link-button" @click="confirmDelete?.show()">
           <i class="fa-solid fa-trash"></i> Delete
         </button>
         <button v-if="can_edit" class="edit-button link-button" @click="toggleEdit">
@@ -129,6 +131,11 @@ const deletePost = () => {
         <input class="save-button" type="submit" value="Save" />
       </div>
     </form>
+
+    <ConfirmDialog ref="confirmDelete" title="Confirm delete" @confirm="deletePost">
+      <template v-slot:confirm><i class="fa-solid fa-trash"></i> Delete</template>
+      <div class="confirm-delete-dialog">Are you sure you want to delete this post?</div>
+    </ConfirmDialog>
   </div>
 </template>
 
