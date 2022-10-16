@@ -17,6 +17,7 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const emit = defineEmits<{
+  (e: "delete"): void;
   (e: "update", request: UpdatePost): void;
 }>();
 
@@ -64,6 +65,10 @@ const update = () => {
 
   editing.value = undefined;
 };
+
+const deletePost = () => {
+  emit("delete");
+};
 </script>
 
 <template>
@@ -72,6 +77,9 @@ const update = () => {
       <div class="uploader" title="Uploader"><i class="fa-solid fa-user"></i> {{ post.user_name }}</div>
       <div class="actions">
         <a :href="make_image_path(post)" :download="post.filename"><i class="fa-solid fa-download"></i> Download</a>
+        <button v-if="can_edit" class="delete-button link-button" @click="deletePost">
+          <i class="fa-solid fa-trash"></i> Delete
+        </button>
         <button v-if="can_edit" class="edit-button link-button" @click="toggleEdit">
           <i class="fa-solid fa-pen-to-square"></i> Edit
         </button>

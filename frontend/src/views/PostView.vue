@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, toRefs } from "vue";
+import { useRouter } from "vue-router";
 
 import PostComment from "../components/PostComment.vue";
 import MainLayout from "@/components/MainLayout.vue";
@@ -18,6 +19,8 @@ const props = defineProps<{
 }>();
 
 const { id } = toRefs(props);
+
+const router = useRouter();
 
 const authStore = useAuthStore();
 const mainStore = useMainStore();
@@ -47,12 +50,15 @@ const fetchPost = async () => {
 };
 
 const updatePost = async (update_post: UpdatePost) => {
-  if (!post.value) {
-    return;
-  }
-
   await mainStore.updatePost(id.value, update_post);
   await fetchPost();
+};
+
+const deletePost = async () => {
+  await mainStore.deletePost(id.value);
+
+  // Navigate back to the posts view
+  router.push({ name: "posts" });
 };
 
 const postComment = async () => {
@@ -68,7 +74,7 @@ const postComment = async () => {
     <MainLayout>
       <div class="layout-row">
         <div class="layout-side">
-          <PostInfo v-if="post" :post="post" :can_edit="can_edit" @update="updatePost" />
+          <PostInfo v-if="post" :post="post" :can_edit="can_edit" @delete="deletePost" @update="updatePost" />
           <label>Comments</label>
           <div class="post-comments">
             <PostComment v-for="c in comments" :key="c.id" :comment="c" />

@@ -27,6 +27,7 @@ pub struct Post {
     pub ext: String,
     pub tn_ext: String,
     pub tags: Vec<String>,
+    pub is_deleted: bool,
 }
 
 #[derive(Debug, sqlx::FromRow)]

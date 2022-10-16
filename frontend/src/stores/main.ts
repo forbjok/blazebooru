@@ -168,9 +168,23 @@ export const useMainStore = defineStore("main", () => {
   }
 
   async function updatePost(id: number, update_post: UpdatePost) {
-    await axios.post<Post>(`/api/post/${id}/update`, update_post, {
+    await axios.post(`/api/post/${id}/update`, update_post, {
       headers: await authStore.getAuthHeaders(),
     });
+
+    return true;
+  }
+
+  async function deletePost(id: number) {
+    await axios.delete(`/api/post/${id}`, {
+      headers: await authStore.getAuthHeaders(),
+    });
+
+    // Remove the post from current posts
+    const index = currentPosts.value.findIndex((p) => p.id === id);
+    if (index >= 0) {
+      currentPosts.value.splice(index, 1);
+    }
 
     return true;
   }
@@ -288,5 +302,6 @@ export const useMainStore = defineStore("main", () => {
     searchPosts,
     uploadPost,
     updatePost,
+    deletePost,
   };
 });

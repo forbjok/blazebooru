@@ -70,7 +70,7 @@ struct PostSearchQuery {
 pub fn router(server: Arc<BlazeBooruServer>) -> Router<Arc<BlazeBooruServer>> {
     Router::with_state(server)
         .route("/", get(get_view_posts))
-        .route("/:id", get(get_view_post))
+        .route("/:id", get(get_view_post).delete(delete_post))
         .route("/:id/update", post(update_post))
         .route("/:id/comments", get(get_post_comments))
         .route("/:id/comments/new", post(post_comment))
@@ -103,6 +103,25 @@ async fn update_post(
         .context("Error updating post")?;
 
     if !post {
+        return Err(ApiError::NotFound);
+    }
+
+    Ok(())
+}
+
+#[axum::debug_handler(state = Arc<BlazeBooruServer>)]
+async fn delete_post(
+    State(server): State<Arc<BlazeBooruServer>>,
+    auth: Authorized,
+    Path(id): Path<i32>,
+) -> Result<(), ApiError> {
+    let success = server
+        .core
+        .delete_post(id, auth.claims.user_id)
+        .await
+        .context("Error deleting post")?;
+
+    if !success {
         return Err(ApiError::NotFound);
     }
 

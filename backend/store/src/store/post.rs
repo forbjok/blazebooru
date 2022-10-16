@@ -30,6 +30,15 @@ impl PgStore {
         Ok(success.unwrap())
     }
 
+    pub async fn delete_post(&self, post_id: i32, user_id: i32) -> Result<bool, StoreError> {
+        let success = sqlx::query_scalar_unchecked!(r#"SELECT delete_post($1, $2);"#, post_id, user_id)
+            .fetch_one(&self.pool)
+            .await
+            .context("Error deleting post in database")?;
+
+        Ok(success.unwrap())
+    }
+
     pub async fn get_view_post(&self, id: i32) -> Result<Option<dbm::ViewPost>, StoreError> {
         let post = sqlx::query_as!(dbm::ViewPost, r#"SELECT * FROM view_post WHERE id = $1;"#, id)
             .fetch_optional(&self.pool)

@@ -92,6 +92,12 @@ impl BlazeBooruCore {
         Ok(success)
     }
 
+    pub async fn delete_post(&self, id: i32, user_id: i32) -> Result<bool, anyhow::Error> {
+        let success = self.store.delete_post(id, user_id).await?;
+
+        Ok(success)
+    }
+
     pub async fn get_export_posts(
         &self,
         include_tags: Vec<String>,
