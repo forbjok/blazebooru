@@ -5,6 +5,8 @@ import Tags from "./Tags.vue";
 
 import type { Search } from "@/stores/main";
 
+import { normalize_tag } from "@/utils/tag";
+
 interface Props {
   modelValue: Search;
 }
@@ -51,7 +53,9 @@ const excludeTag = (tag: string) => {
 };
 
 const submitTag = () => {
-  const tag = text.value.trim();
+  const tag = normalize_tag(text.value);
+  text.value = "";
+
   if (!tag) {
     return;
   }
@@ -61,8 +65,6 @@ const submitTag = () => {
   } else {
     includeTag(tag);
   }
-
-  text.value = "";
 };
 </script>
 

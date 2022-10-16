@@ -2,6 +2,7 @@
 import { ref, toRefs } from "vue";
 
 import Tags from "@/components/Tags.vue";
+import { normalize_tag } from "@/utils/tag";
 
 interface Props {
   modelValue: string[];
@@ -14,6 +15,13 @@ const { modelValue: tags } = toRefs(props);
 const text = ref("");
 
 const addTag = (tag: string) => {
+  tag = normalize_tag(tag);
+
+  // Don't add blank tag
+  if (tag.length === 0) {
+    return;
+  }
+
   // Don't add duplicate tags
   if (tags.value.includes(tag)) {
     return;
