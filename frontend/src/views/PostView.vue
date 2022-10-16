@@ -57,8 +57,8 @@ const updatePost = async (update_post: UpdatePost) => {
 const deletePost = async () => {
   await mainStore.deletePost(id.value);
 
-  // Navigate back to the posts view
-  router.push({ name: "posts" });
+  // Navigate back to the browse view
+  router.push({ name: "browse" });
 };
 
 const postComment = async () => {

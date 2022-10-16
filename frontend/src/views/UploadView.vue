@@ -23,7 +23,7 @@ const upload = async (info: PostInfo, file: File) => {
 
   if (new_post) {
     mainStore.clearSearch();
-    router.push({ name: "posts" });
+    router.push({ name: "browse" });
   }
 };
 </script>

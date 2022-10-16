@@ -13,7 +13,7 @@ const logout = async () => {
     <div class="header-bar">
       <span class="powered-by">Powered by BlazeBooru</span>
       <span class="nav">
-        <span class="posts"> [ <router-link :to="{ name: 'posts' }">Posts</router-link> ] </span>
+        <span class="browse"> [ <router-link :to="{ name: 'browse' }">Browse</router-link> ] </span>
         <span v-if="authStore.isAuthorized" class="upload">
           [ <router-link :to="{ name: 'upload' }">Upload</router-link> ]
         </span>

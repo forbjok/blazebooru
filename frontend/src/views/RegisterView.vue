@@ -17,7 +17,7 @@ const router = useRouter();
 const register = async (request: LoginRequest) => {
   const success = await authStore.register(request);
   if (success) {
-    router.push({ name: "posts" });
+    router.push({ name: "browse" });
   }
 };
 </script>

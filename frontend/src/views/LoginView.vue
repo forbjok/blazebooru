@@ -16,7 +16,7 @@ const mainStore = useMainStore();
 const login = async (request: LoginRequest) => {
   const success = await authStore.login(request);
   if (success) {
-    router.push({ name: "posts" });
+    router.push({ name: "browse" });
   }
 };
 </script>
