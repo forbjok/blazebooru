@@ -6,6 +6,10 @@ import Posts from "@/components/Posts.vue";
 import SearchForm from "../components/SearchForm.vue";
 
 import { useMainStore, type Search } from "@/stores/main";
+import { onBeforeRouteUpdate, useRoute, useRouter, type LocationQueryValue } from "vue-router";
+
+const route = useRoute();
+const router = useRouter();
 
 const mainStore = useMainStore();
 
@@ -19,8 +23,24 @@ watch(
   { deep: true }
 );
 
+onBeforeRouteUpdate(async (to) => {
+  const page = parseInt((to.query.p as LocationQueryValue) || "");
+  if (!page) {
+    router.replace({ name: "browse", query: { p: mainStore.currentPage } });
+    return;
+  }
+
+  await mainStore.loadPage(page);
+});
+
 onMounted(async () => {
   await mainStore.initializePosts();
+  const page = parseInt((route.query.p as LocationQueryValue) || "");
+  if (page) {
+    mainStore.loadPage(page);
+  } else {
+    router.replace({ name: "browse", query: { p: mainStore.currentPage } });
+  }
 });
 
 const includeTag = (tag: string) => {
@@ -72,19 +92,23 @@ const excludeTag = (tag: string) => {
         <div class="content">
           <Posts v-if="mainStore.currentPosts" :posts="mainStore.currentPosts" />
           <div v-if="mainStore.pageCount > 1" class="pages">
-            <button class="page first link-button" title="First page" @click="mainStore.loadPage(1)">&lt;&lt;</button>
+            <router-link :to="{ name: 'browse', query: { p: 1 } }" class="page first" title="First page"
+              >&lt;&lt;</router-link
+            >
             [
-            <button
+            <router-link
               v-for="p in mainStore.pages"
               :key="p"
-              class="page link-button"
+              :to="{ name: 'browse', query: { p } }"
+              class="page"
               :class="{ current: p === mainStore.currentPage }"
-              @click="mainStore.loadPage(p)"
             >
               {{ p }}
-            </button>
+            </router-link>
             ]
-            <button class="page last link-button" title="Last page" @click="mainStore.loadLastPage()">>></button>
+            <router-link :to="{ name: 'browse', query: { p: mainStore.pageCount } }" class="page last" title="Last page"
+              >>></router-link
+            >
           </div>
         </div>
       </div>
