@@ -4,7 +4,7 @@ import { ref } from "vue";
 import { useRouter } from "vue-router";
 
 import MainLayout from "@/components/MainLayout.vue";
-import UploadForm from "@/components/UploadForm.vue";
+import UploadForm from "@/components/post/UploadForm.vue";
 
 import { useMainStore } from "@/stores/main";
 

@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import { toRefs } from "vue";
 
-import Tags from "./Tags.vue";
+import TagEntry from "@/components/tag/TagEntry.vue";
+import Tags from "@/components/tag/Tags.vue";
 
 import type { Search } from "@/stores/main";
-
-import TagEntry from "./TagEntry.vue";
 
 interface Props {
   modelValue: Search;

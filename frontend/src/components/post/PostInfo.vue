@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, toRefs } from "vue";
 
-import Tags from "@/components/Tags.vue";
-import TagsEditor from "./TagsEditor.vue";
+import Tags from "@/components/tag/Tags.vue";
+import TagsEditor from "@/components/tag/TagsEditor.vue";
 
 import type { Post, PostInfo, UpdatePost } from "@/models/api/post";
 import { make_image_path } from "@/utils/path";

@@ -2,7 +2,7 @@
 import { useRouter } from "vue-router";
 
 import MainLayout from "@/components/MainLayout.vue";
-import RegisterForm from "@/components/RegisterForm.vue";
+import RegisterForm from "@/components/login/RegisterForm.vue";
 
 import { useAuthStore } from "@/stores/auth";
 import { useMainStore } from "@/stores/main";

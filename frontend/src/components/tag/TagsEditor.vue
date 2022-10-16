@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, toRefs } from "vue";
 
-import Tags from "@/components/Tags.vue";
-import TagEntry from "./TagEntry.vue";
+import TagEntry from "@/components/tag/TagEntry.vue";
+import Tags from "@/components/tag/Tags.vue";
 
 interface Props {
   modelValue: string[];

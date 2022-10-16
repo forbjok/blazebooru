@@ -2,9 +2,9 @@
 import { computed, onMounted, ref, toRefs } from "vue";
 import { useRouter } from "vue-router";
 
-import PostComment from "../components/PostComment.vue";
+import PostComment from "../components/comment/PostComment.vue";
 import MainLayout from "@/components/MainLayout.vue";
-import PostInfo from "@/components/PostInfo.vue";
+import PostInfo from "@/components/post/PostInfo.vue";
 
 import { useAuthStore } from "@/stores/auth";
 import { useMainStore } from "@/stores/main";

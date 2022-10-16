@@ -2,8 +2,8 @@
 import { onMounted, ref, watch } from "vue";
 
 import MainLayout from "@/components/MainLayout.vue";
-import Posts from "@/components/Posts.vue";
-import SearchForm from "../components/SearchForm.vue";
+import Posts from "@/components/post/Posts.vue";
+import SearchForm from "@/components/post/SearchForm.vue";
 
 import { useMainStore, type Search } from "@/stores/main";
 import { onBeforeRouteUpdate, useRoute, useRouter, type LocationQueryValue } from "vue-router";

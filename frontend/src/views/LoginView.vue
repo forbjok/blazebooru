@@ -2,7 +2,7 @@
 import { useRouter } from "vue-router";
 
 import MainLayout from "@/components/MainLayout.vue";
-import LoginForm from "../components/LoginForm.vue";
+import LoginForm from "@/components/login/LoginForm.vue";
 
 import type { LoginRequest } from "@/models/api/login";
 import { useAuthStore } from "@/stores/auth";

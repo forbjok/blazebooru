@@ -2,7 +2,7 @@
 import { computed, reactive, ref, toRefs } from "vue";
 import { filesize } from "filesize";
 
-import TagsEditor from "./TagsEditor.vue";
+import TagsEditor from "@/components/tag/TagsEditor.vue";
 
 import type { PostInfo } from "@/models/api/post";
 
