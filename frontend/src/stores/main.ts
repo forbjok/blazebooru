@@ -225,6 +225,9 @@ export const useMainStore = defineStore("main", () => {
     }
 
     const pageInfo = await getPage(page);
+    if (!pageInfo) {
+      return;
+    }
 
     currentPage.value = page;
     await loadPosts(pageInfo.start_id);
