@@ -31,6 +31,21 @@ pub struct UpdatePost {
 }
 
 #[derive(Debug, Serialize)]
+pub struct Comment {
+    pub id: i32,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+    pub user_id: Option<i32>,
+    pub user_name: Option<String>,
+    pub comment: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct NewPostComment {
+    pub comment: String,
+}
+
+#[derive(Debug, Serialize)]
 pub struct User {
     pub id: i32,
     pub created_at: DateTime<Utc>,

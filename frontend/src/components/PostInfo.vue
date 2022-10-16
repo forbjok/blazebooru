@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import { computed, ref, toRefs } from "vue";
+import { ref, toRefs } from "vue";
 
 import Tags from "@/components/Tags.vue";
 import TagsEditor from "./TagsEditor.vue";
 
 import type { Post, PostInfo, UpdatePost } from "@/models/api/post";
-
 import { make_image_path } from "@/utils/path";
 
 interface Props {
@@ -24,18 +23,19 @@ const emit = defineEmits<{
 const { post } = toRefs(props);
 
 const editing = ref<PostInfo>();
-const expand_image = ref(false);
 
-const url = computed(() => make_image_path(post.value));
+const toggleEdit = () => {
+  if (!editing.value) {
+    editing.value = {
+      title: post.value.title,
+      description: post.value.description,
+      source: post.value.source,
 
-const beginEdit = () => {
-  editing.value = {
-    title: post.value.title,
-    description: post.value.description,
-    source: post.value.source,
-
-    tags: [...post.value.tags],
-  };
+      tags: [...post.value.tags],
+    };
+  } else {
+    cancelEdit();
+  }
 };
 
 const cancelEdit = () => {
@@ -67,29 +67,28 @@ const update = () => {
 </script>
 
 <template>
-  <div class="post">
-    <div class="image" :class="{ expand: expand_image }" @click.prevent="expand_image = !expand_image">
-      <a :href="url">
-        <img :src="url" alt="Image" />
-      </a>
+  <div class="post-info">
+    <div class="header">
+      <div class="uploader" title="Uploader"><i class="fa-solid fa-user"></i> {{ post.user_name }}</div>
+      <div class="actions">
+        <a :href="make_image_path(post)" :download="post.filename"><i class="fa-solid fa-download"></i> Download</a>
+        <button v-if="can_edit" class="edit-button link-button" @click="toggleEdit">
+          <i class="fa-solid fa-pen-to-square"></i> Edit
+        </button>
+      </div>
     </div>
-    <div class="actions">
-      <a :href="url" :download="post.filename"><i class="fa-solid fa-download"></i> Download</a>
-      <button v-if="can_edit" class="edit-button link-button" @click="beginEdit">
-        <i class="fa-solid fa-pen-to-square"></i> Edit
-      </button>
-    </div>
+    <hr />
     <div v-if="!editing" class="post-info">
       <div v-if="post.title" class="title">
         {{ post.title }}
       </div>
-      <div class="user">Uploaded by: {{ post.user_name }}</div>
       <div v-if="post.source" class="source">Source: {{ post.source }}</div>
       <div v-if="post.tags">Tags: <Tags :tags="post.tags" /></div>
+      <hr />
       <div v-if="post.description" class="description">
-        <div class="header">Description</div>
-        <div class="text">{{ post.description }}</div>
+        {{ post.description }}
       </div>
+      <hr />
     </div>
     <form v-if="editing" class="edit-form" @submit.prevent="update">
       <label>Title</label>
@@ -118,24 +117,33 @@ const update = () => {
 </template>
 
 <style scoped lang="scss">
-.post {
-  display: flex;
-  flex-direction: column;
-  align-items: start;
-  gap: 0.5rem;
-}
-
-.actions {
-  display: flex;
-  flex-direction: row;
-  gap: 1rem;
-}
-
 .post-info {
   display: flex;
   flex-direction: column;
-  align-items: start;
-  gap: 0.5rem;
+  gap: 0.4rem;
+}
+
+.header {
+  display: flex;
+  flex-direction: row;
+  gap: 1rem;
+
+  width: 100%;
+
+  cursor: default;
+
+  .uploader {
+    flex-shrink: 1;
+  }
+
+  .actions {
+    flex-grow: 1;
+
+    display: flex;
+    flex-direction: row;
+    justify-content: end;
+    gap: 1rem;
+  }
 }
 
 .title {
@@ -143,39 +151,7 @@ const update = () => {
 }
 
 .description {
-  display: flex;
-  flex-direction: column;
-
-  background-color: var(--color-description-background);
-
-  max-width: 100%;
-
-  .header {
-    background-color: var(--color-description-header-background);
-
-    padding: 0.3rem;
-  }
-
-  .text {
-    padding: 0.4rem;
-  }
-}
-
-.image {
-  a {
-    display: block;
-  }
-
-  img {
-    background-color: var(--color-post-background);
-
-    padding: 0.2rem;
-  }
-
-  &:not(.expand) img {
-    max-width: 90vw;
-    max-height: 90vh;
-  }
+  margin: 0.5rem 0;
 }
 
 // --- Edit form ---
@@ -198,6 +174,7 @@ const update = () => {
 .form-buttons {
   display: flex;
   flex-direction: row;
+  align-self: end;
   gap: 1rem;
 }
 

@@ -48,6 +48,17 @@ pub struct ViewPost {
     pub tags: Option<Vec<String>>,
 }
 
+#[derive(Debug, sqlx::FromRow)]
+pub struct PostComment {
+    pub id: i32,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+    pub user_id: Option<i32>,
+    pub user_name: Option<String>,
+    pub post_id: i32,
+    pub comment: String,
+}
+
 #[derive(Debug, sqlx::Type)]
 #[sqlx(type_name = "new_post")]
 pub struct NewPost {
@@ -82,6 +93,13 @@ pub struct UpdatePost {
 pub struct NewUser {
     pub name: Option<String>,
     pub password_hash: Option<String>,
+}
+
+#[derive(Debug, sqlx::Type)]
+#[sqlx(type_name = "new_post_comment")]
+pub struct NewPostComment {
+    pub post_id: i32,
+    pub comment: String,
 }
 
 #[derive(Debug, sqlx::Type)]

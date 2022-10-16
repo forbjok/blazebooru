@@ -6,6 +6,7 @@ use anyhow::Context;
 use blazebooru_store::PgStore;
 
 mod auth;
+mod comment;
 pub mod image;
 mod post;
 mod user;

@@ -72,6 +72,8 @@ pub fn router(server: Arc<BlazeBooruServer>) -> Router<Arc<BlazeBooruServer>> {
         .route("/", get(get_view_posts))
         .route("/:id", get(get_view_post))
         .route("/:id/update", post(update_post))
+        .route("/:id/comments", get(get_post_comments))
+        .route("/:id/comments/new", post(post_comment))
         .route("/pages", get(calculate_pages))
         .route("/pages/last", get(calculate_last_page))
         .route("/upload", post(upload_post))
@@ -82,7 +84,7 @@ async fn get_view_post(
     State(server): State<Arc<BlazeBooruServer>>,
     Path(id): Path<i32>,
 ) -> Result<Json<vm::Post>, ApiError> {
-    let post = server.core.get_view_post(id).await.context("Error getting thread")?;
+    let post = server.core.get_view_post(id).await.context("Error getting view post")?;
 
     Ok(Json(post.ok_or(ApiError::NotFound)?))
 }
@@ -98,7 +100,7 @@ async fn update_post(
         .core
         .update_post(id, req, auth.claims.user_id)
         .await
-        .context("Error getting thread")?;
+        .context("Error updating post")?;
 
     if !post {
         return Err(ApiError::NotFound);
@@ -120,7 +122,7 @@ async fn get_view_posts(
         .core
         .get_view_posts(include_tags, exclude_tags, start_id, limit)
         .await
-        .context("Error getting thread")?;
+        .context("Error getting view posts")?;
 
     Ok(Json(posts))
 }
@@ -152,7 +154,7 @@ async fn calculate_pages(
         .core
         .calculate_pages(include_tags, exclude_tags, posts_per_page, page_count, origin_page)
         .await
-        .context("Error getting posts pagination stats")?;
+        .context("Error calculating pages")?;
 
     Ok(Json(pages))
 }
@@ -173,7 +175,7 @@ async fn calculate_last_page(
         .core
         .calculate_last_page(include_tags, exclude_tags, posts_per_page)
         .await
-        .context("Error getting posts pagination stats")?;
+        .context("Error calculating last page")?;
 
     Ok(Json(page))
 }
@@ -231,4 +233,34 @@ async fn upload_post(
     } else {
         Err(ApiError::BadRequest)
     }
+}
+
+#[axum::debug_handler(state = Arc<BlazeBooruServer>)]
+async fn get_post_comments(
+    State(server): State<Arc<BlazeBooruServer>>,
+    Path(id): Path<i32>,
+) -> Result<Json<Vec<vm::Comment>>, ApiError> {
+    let comments = server
+        .core
+        .get_post_comments(id)
+        .await
+        .context("Error getting post comments")?;
+
+    Ok(Json(comments))
+}
+
+#[axum::debug_handler(state = Arc<BlazeBooruServer>)]
+async fn post_comment(
+    State(server): State<Arc<BlazeBooruServer>>,
+    auth: Option<Authorized>,
+    Path(id): Path<i32>,
+    Json(req): Json<vm::NewPostComment>,
+) -> Result<Json<vm::Comment>, ApiError> {
+    let comment = server
+        .core
+        .create_post_comment(req, id, auth.map(|a| a.claims.user_id))
+        .await
+        .context("Error creating post comment")?;
+
+    Ok(Json(comment))
 }

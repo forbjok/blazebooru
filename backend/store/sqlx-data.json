@@ -302,6 +302,79 @@
     },
     "query": "SELECT * FROM post WHERE id = $1;"
   },
+  "8816f24f32b17399338b268809fe479f46f190819dfa9b043c83d994b918e94b": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int4"
+        },
+        {
+          "name": "created_at",
+          "ordinal": 1,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "updated_at",
+          "ordinal": 2,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "user_id",
+          "ordinal": 3,
+          "type_info": "Int4"
+        },
+        {
+          "name": "user_name",
+          "ordinal": 4,
+          "type_info": "Text"
+        },
+        {
+          "name": "comment",
+          "ordinal": 5,
+          "type_info": "Text"
+        },
+        {
+          "name": "post_id",
+          "ordinal": 6,
+          "type_info": "Int4"
+        }
+      ],
+      "nullable": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "parameters": {
+        "Left": [
+          {
+            "Custom": {
+              "kind": {
+                "Composite": [
+                  [
+                    "post_id",
+                    "Int4"
+                  ],
+                  [
+                    "comment",
+                    "Text"
+                  ]
+                ]
+              },
+              "name": "new_post_comment"
+            }
+          },
+          "Int4"
+        ]
+      }
+    },
+    "query": "SELECT * FROM create_post_comment($1, $2);"
+  },
   "8fd00403c860ceadbab3e7d2b6bbf9a3d925f3663bc1644bfd27b7732b6ac639": {
     "describe": {
       "columns": [
@@ -707,6 +780,62 @@
       }
     },
     "query": "SELECT * FROM view_post ORDER BY id ASC;"
+  },
+  "d025d31a7f59b59a7ed77a177759291f270df3bbabeb715009a8a37ccb047894": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int4"
+        },
+        {
+          "name": "created_at",
+          "ordinal": 1,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "updated_at",
+          "ordinal": 2,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "user_id",
+          "ordinal": 3,
+          "type_info": "Int4"
+        },
+        {
+          "name": "user_name",
+          "ordinal": 4,
+          "type_info": "Text"
+        },
+        {
+          "name": "comment",
+          "ordinal": 5,
+          "type_info": "Text"
+        },
+        {
+          "name": "post_id",
+          "ordinal": 6,
+          "type_info": "Int4"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        true,
+        true,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Int4"
+        ]
+      }
+    },
+    "query": "SELECT * FROM post_comment WHERE post_id = $1 ORDER BY id ASC;"
   },
   "d209de64353ceb71544b0ca9fdeeaf0d30737afa0a7d7adaaaa05e4958aaf5a0": {
     "describe": {

@@ -76,6 +76,19 @@ impl From<dbm::ViewPost> for vm::Post {
     }
 }
 
+impl From<dbm::PostComment> for vm::Comment {
+    fn from(p: dbm::PostComment) -> Self {
+        vm::Comment {
+            id: p.id,
+            created_at: p.created_at,
+            updated_at: p.updated_at,
+            user_id: p.user_id,
+            user_name: p.user_name,
+            comment: p.comment,
+        }
+    }
+}
+
 impl From<dbm::PageInfo> for vm::PageInfo {
     fn from(p: dbm::PageInfo) -> Self {
         vm::PageInfo {
