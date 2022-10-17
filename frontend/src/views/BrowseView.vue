@@ -7,6 +7,7 @@ import SearchForm from "@/components/post/SearchForm.vue";
 
 import { useMainStore, type Search } from "@/stores/main";
 import { onBeforeRouteUpdate, useRoute, useRouter, type LocationQueryValue } from "vue-router";
+import PoweredBy from "../components/about/PoweredBy.vue";
 
 const route = useRoute();
 const router = useRouter();
@@ -91,6 +92,8 @@ const excludeTag = (tag: string) => {
               <span class="tag-text" :class="{ included: search.tags.includes(t) }">{{ t }}</span>
             </div>
           </div>
+          <div class="buffer"></div>
+          <PoweredBy />
         </div>
         <div class="content">
           <Posts v-if="mainStore.currentPosts" :posts="mainStore.currentPosts" />
@@ -120,6 +123,7 @@ const excludeTag = (tag: string) => {
       <div class="layout mobile">
         <div class="content">
           <Posts v-if="mainStore.currentPosts" :posts="mainStore.currentPosts" />
+          <PoweredBy />
         </div>
         <div class="search-panel">
           <div v-if="mainStore.pageCount > 1" class="pages">
@@ -149,11 +153,13 @@ const excludeTag = (tag: string) => {
 </template>
 
 <style scoped lang="scss">
+.layout {
+  min-height: calc(100vh - 2rem);
+}
+
 .layout.desktop {
   display: flex;
   flex-direction: row;
-
-  height: 100%;
 
   .side-panel {
     flex-shrink: 1;
@@ -230,7 +236,12 @@ const excludeTag = (tag: string) => {
 .layout.mobile {
   flex-direction: column;
 
-  padding-bottom: 7rem;
+  padding-bottom: 8rem;
+
+  .content {
+    display: flex;
+    flex-direction: column;
+  }
 
   .search-panel {
     position: fixed;

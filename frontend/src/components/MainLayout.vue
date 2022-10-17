@@ -11,7 +11,6 @@ const logout = async () => {
 <template>
   <div class="layout">
     <div class="header-bar">
-      <span class="powered-by">Powered by BlazeBooru</span>
       <span class="nav">
         <span class="browse"> [ <router-link :to="{ name: 'browse' }">Browse</router-link> ] </span>
         <span v-if="authStore.isAuthorized" class="upload">
@@ -35,9 +34,12 @@ const logout = async () => {
 
 <style scoped lang="scss">
 .layout {
-  padding-top: 2rem;
+  --top-bar-height: 2rem;
+  --max-content-height: calc(100vh - var(--top-bar-height));
 
-  min-height: 100vh;
+  padding-top: var(--top-bar-height);
+
+  min-height: var(--max-content-height);
 }
 
 .header-bar {
@@ -63,19 +65,6 @@ const logout = async () => {
     flex-grow: 1;
   }
 
-  .powered-by {
-    position: absolute;
-    top: 0.3rem;
-    left: 0;
-    right: 0;
-
-    color: var(--color-faded-text);
-    text-align: center;
-
-    font-size: 0.9rem;
-
-    z-index: -8;
-  }
   .user {
     flex-shrink: 1;
   }

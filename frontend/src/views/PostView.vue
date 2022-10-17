@@ -197,7 +197,7 @@ const postComment = async () => {
 
     width: 25%;
     min-width: 18rem;
-    min-height: 100vh;
+    min-height: var(--max-content-height);
   }
 
   .layout-content {
@@ -212,7 +212,7 @@ const postComment = async () => {
   .image {
     &:not(.expand) img {
       max-width: 90vw;
-      max-height: 94vh;
+      max-height: 92vh;
     }
   }
 }
@@ -235,7 +235,7 @@ const postComment = async () => {
 
   .image img {
     max-width: 100vw;
-    max-height: 100vh;
+    max-height: var(--max-content-height);
   }
 }
 </style>
