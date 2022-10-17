@@ -154,6 +154,27 @@
     },
     "query": "SELECT update_post($1, $2);"
   },
+  "56e75134fbcc526d69764dd2e005b3505547dd483258d068a1ab723f8507e7be": {
+    "describe": {
+      "columns": [
+        {
+          "name": "delete_post",
+          "ordinal": 0,
+          "type_info": "Bool"
+        }
+      ],
+      "nullable": [
+        null
+      ],
+      "parameters": {
+        "Left": [
+          "Int4",
+          "Int4"
+        ]
+      }
+    },
+    "query": "SELECT delete_post($1, $2);"
+  },
   "60052c09546b142087edbb8c7677a63a9567bbdc0ae3a6cb1626a3fd3b520c67": {
     "describe": {
       "columns": [
@@ -275,6 +296,11 @@
           "name": "tags",
           "ordinal": 14,
           "type_info": "TextArray"
+        },
+        {
+          "name": "is_deleted",
+          "ordinal": 15,
+          "type_info": "Bool"
         }
       ],
       "nullable": [
@@ -285,6 +311,7 @@
         true,
         true,
         true,
+        false,
         false,
         false,
         false,
