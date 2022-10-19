@@ -2,6 +2,7 @@
 DROP FUNCTION get_tag_ids;
 DROP FUNCTION resolve_and_validate_tags;
 DROP FUNCTION initialize_search_cache;
+DROP FUNCTION update_post_tags;
 DROP FUNCTION calculate_pages;
 DROP FUNCTION calculate_pages_reverse;
 DROP FUNCTION calculate_last_page;
@@ -51,8 +52,8 @@ BEGIN
 END;
 $BODY$ STABLE PARALLEL SAFE;
 
--- Create get_wildcard_tag_ids function
-CREATE FUNCTION get_wildcard_tag_ids(
+-- Create get_wildcard_tags function
+CREATE FUNCTION get_wildcard_tags(
   IN p_tags text[]
 )
 RETURNS wildcard_tag[]
@@ -87,8 +88,8 @@ AS $BODY$
 BEGIN
   p_tag_ids := get_tag_ids(p_tags);
   p_exclude_tag_ids := get_tag_ids(p_exclude_tags);
-  p_wildcard_tags := get_wildcard_tag_ids(p_tags);
-  p_wildcard_exclude_tags := get_wildcard_tag_ids(p_exclude_tags);
+  p_wildcard_tags := get_wildcard_tags(p_tags);
+  p_wildcard_exclude_tags := get_wildcard_tags(p_exclude_tags);
 
   p_valid := NOT ((icount(p_tag_ids) + cardinality(p_wildcard_tags)) < cardinality(p_tags) OR p_tag_ids && p_exclude_tag_ids);
 END;
@@ -109,6 +110,7 @@ DECLARE
   v_post_count integer;
   v_first_post_id integer;
   v_last_post_id integer;
+  v_query text;
 BEGIN
   -- Try to get cached search info
   SELECT post_count INTO v_post_count
@@ -119,19 +121,48 @@ BEGIN
     AND wildcard_exclude_tags = p_wildcard_exclude_tags;
 
   IF v_post_count IS NULL THEN
-    -- Get total post count in search
-    SELECT COALESCE(COUNT(*)::integer, 0), MAX(post_id), MIN(post_id)
-    INTO v_post_count, v_first_post_id, v_last_post_id
-    FROM post_tag_id_cache AS ptic
-    WHERE
+    v_query := $$
+      -- Get total post count in search
+      SELECT COALESCE(COUNT(*)::integer, 0), MAX(ptic.post_id), MIN(ptic.post_id)
+      FROM post_tag_id_cache AS ptic
+      WHERE 1=1
+    $$;
+
+    IF icount(p_tag_ids) > 0 THEN
       -- Post must have all the included tags
-      ptic.tag_ids @> p_tag_ids
+      v_query := v_query || $$
+        AND ptic.tag_ids @> $1
+      $$;
+    END IF;
+
+    IF icount(p_exclude_tag_ids) > 0 THEN
       -- Post must not have any of the excluded tags
-      AND NOT ptic.tag_ids && p_exclude_tag_ids
+      v_query := v_query || $$
+        AND NOT ptic.tag_ids && $2
+      $$;
+    END IF;
+
+    IF cardinality(p_wildcard_tags) > 0 THEN
       -- Posts must match at least one tag matching each wildcard tag
-      AND NOT EXISTS(SELECT * FROM unnest(p_wildcard_tags) AS wct WHERE NOT ptic.tag_ids && wct.tag_ids)
+      v_query := v_query || $$
+        AND NOT EXISTS(SELECT * FROM unnest($3) AS wct WHERE NOT ptic.tag_ids && wct.tag_ids)
+      $$;
+    END IF;
+
+    IF cardinality(p_wildcard_exclude_tags) > 0 THEN
       -- Posts must not match any tag matching any wildcard exclude tag
-      AND NOT EXISTS(SELECT * FROM unnest(p_wildcard_exclude_tags) AS wct WHERE ptic.tag_ids && wct.tag_ids);
+      v_query := v_query || $$
+        AND NOT EXISTS(SELECT * FROM unnest($4) AS wct WHERE ptic.tag_ids && wct.tag_ids)
+      $$;
+    END IF;
+
+    EXECUTE v_query
+    INTO v_post_count, v_first_post_id, v_last_post_id
+    USING
+      p_tag_ids,
+      p_exclude_tag_ids,
+      p_wildcard_tags,
+      p_wildcard_exclude_tags;
 
     -- If there are 0 posts in the search, return immediately.
     IF v_post_count = 0 THEN
@@ -184,6 +215,7 @@ DECLARE
   v_post_count integer;
   v_start_id integer;
   v_last_id integer;
+  v_query text;
 BEGIN
   SELECT *
   INTO v_tag_ids, v_exclude_tag_ids, v_wildcard_tags, v_wildcard_exclude_tags, v_valid
@@ -213,79 +245,80 @@ BEGIN
     v_start_id := p_origin_page.start_id;
   END IF;
 
-  -- Use different queries depending on whether
-  -- there are tags specified or not.
-  -- This should not be necessary, but IT IS,
-  -- because for some reason it's slow as hell
-  -- if you put an OR condition on the post ID
-  -- filtering.
+  v_query := $$
+    SELECT array(
+      SELECT (no, start_id)::page_info
+      FROM (
+        SELECT
+          COALESCE($10, 1) + ROW_NUMBER() OVER () - 1 AS no,
+          x.id AS start_id
+        FROM (
+          SELECT
+            ptic.post_id AS id,
+            ROW_NUMBER() OVER (ORDER BY ptic.post_id DESC) AS rn
+          FROM post_tag_id_cache AS ptic
+          WHERE
+            -- Only scan forward from start ID
+            ptic.post_id <= $5
+  $$;
+
   IF icount(v_tag_ids) > 0 THEN
-    v_pages := array(
-      SELECT (no, start_id)::page_info
-      FROM (
-        SELECT
-          COALESCE(p_origin_page.no, 1) + ROW_NUMBER() OVER () - 1 AS no,
-          x.id AS start_id
-        FROM (
-          SELECT
-            ptic.post_id AS id,
-            ROW_NUMBER() OVER (ORDER BY ptic.post_id DESC) AS rn
-          FROM post_tag_id_cache AS ptic
-          WHERE
-            -- Only scan forward from start ID
-            ptic.post_id <= v_start_id
-            -- Reduce amount of posts to be scanned by filtering down
-            -- to only post IDs that have at least one of the search tags.
-            AND post_id IN (SELECT pt.post_id
-                            FROM post_tag AS pt
-                            WHERE pt.post_id BETWEEN v_last_id AND v_start_id
-                              AND pt.tag_id = ANY(v_tag_ids))
-            -- Post must have all the included tags
-            AND ptic.tag_ids @> v_tag_ids
-            -- Post must not have any of the excluded tags
-            AND NOT ptic.tag_ids && v_exclude_tag_ids
-            -- Posts must match at least one tag matching each wildcard tag
-            AND NOT EXISTS(SELECT * FROM unnest(v_wildcard_tags) AS wct WHERE NOT ptic.tag_ids && wct.tag_ids)
-            -- Posts must not match any tag matching any wildcard exclude tag
-            AND NOT EXISTS(SELECT * FROM unnest(v_wildcard_exclude_tags) AS wct WHERE ptic.tag_ids && wct.tag_ids)
-          ORDER BY ptic.post_id DESC
-          LIMIT LEAST(p_page_count * p_posts_per_page, v_post_count) -- X pages at a time
-        ) AS x
-        WHERE MOD(x.rn - 1, p_posts_per_page) = 0
-      ) AS x
-      WHERE x.no > COALESCE(p_origin_page.no, 0)
-    );
-  ELSE
-    v_pages := array(
-      SELECT (no, start_id)::page_info
-      FROM (
-        SELECT
-          COALESCE(p_origin_page.no, 1) + ROW_NUMBER() OVER () - 1 AS no,
-          x.id AS start_id
-        FROM (
-          SELECT
-            ptic.post_id AS id,
-            ROW_NUMBER() OVER (ORDER BY ptic.post_id DESC) AS rn
-          FROM post_tag_id_cache AS ptic
-          WHERE
-            -- Only scan forward from start ID
-            ptic.post_id <= v_start_id
-            -- Post must have all the included tags
-            AND ptic.tag_ids @> v_tag_ids
-            -- Post must not have any of the excluded tags
-            AND NOT ptic.tag_ids && v_exclude_tag_ids
-            -- Posts must match at least one tag matching each wildcard tag
-            AND NOT EXISTS(SELECT * FROM unnest(v_wildcard_tags) AS wct WHERE NOT ptic.tag_ids && wct.tag_ids)
-            -- Posts must not match any tag matching any wildcard exclude tag
-            AND NOT EXISTS(SELECT * FROM unnest(v_wildcard_exclude_tags) AS wct WHERE ptic.tag_ids && wct.tag_ids)
-          ORDER BY ptic.post_id DESC
-          LIMIT LEAST(p_page_count * p_posts_per_page, v_post_count) -- X pages at a time
-        ) AS x
-        WHERE MOD(x.rn - 1, p_posts_per_page) = 0
-      ) AS x
-      WHERE x.no > COALESCE(p_origin_page.no, 0)
-    );
+    v_query := v_query || $$
+      -- Reduce amount of posts to be scanned by filtering down
+      -- to only post IDs that have at least one of the search tags.
+      AND ptic.post_id IN (SELECT pt.post_id
+                           FROM post_tag AS pt
+                           WHERE pt.post_id BETWEEN $6 AND $5
+                             AND pt.tag_id = ANY($1))
+      -- Post must have all the included tags
+      AND ptic.tag_ids @> $1
+    $$;
   END IF;
+
+  IF icount(v_exclude_tag_ids) > 0 THEN
+    v_query := v_query || $$
+      -- Post must not have any of the excluded tags
+      AND NOT ptic.tag_ids && $2
+    $$;
+  END IF;
+
+  IF cardinality(v_wildcard_tags) > 0 THEN
+    v_query := v_query || $$
+      -- Posts must match at least one tag matching each wildcard tag
+      AND NOT EXISTS(SELECT * FROM unnest($3) AS wct WHERE NOT ptic.tag_ids && wct.tag_ids)
+    $$;
+  END IF;
+
+  IF cardinality(v_wildcard_exclude_tags) > 0 THEN
+    v_query := v_query || $$
+      -- Posts must not match any tag matching any wildcard exclude tag
+      AND NOT EXISTS(SELECT * FROM unnest($4) AS wct WHERE ptic.tag_ids && wct.tag_ids)
+    $$;
+  END IF;
+
+  v_query := v_query || $$
+          ORDER BY ptic.post_id DESC
+          LIMIT LEAST($7 * $8, $9) -- X pages at a time
+        ) AS x
+        WHERE MOD(x.rn - 1, $8) = 0
+      ) AS x
+      WHERE x.no > COALESCE($10, 0)
+    );
+  $$;
+
+  EXECUTE v_query
+  INTO v_pages
+  USING
+    v_tag_ids,
+    v_exclude_tag_ids,
+    v_wildcard_tags,
+    v_wildcard_exclude_tags,
+    v_start_id,
+    v_last_id,
+    p_page_count,
+    p_posts_per_page,
+    v_post_count,
+    p_origin_page.no;
 
   RETURN v_pages;
 END;
@@ -314,6 +347,7 @@ DECLARE
   v_valid boolean;
   v_start_id integer;
   v_last_id integer;
+  v_query text;
 BEGIN
   SELECT *
   INTO v_tag_ids, v_exclude_tag_ids, v_wildcard_tags, v_wildcard_exclude_tags, v_valid
@@ -343,79 +377,80 @@ BEGIN
     v_last_id := p_origin_page.start_id;
   END IF;
 
-  -- Use different queries depending on whether
-  -- there are tags specified or not.
-  -- This should not be necessary, but IT IS,
-  -- because for some reason it's slow as hell
-  -- if you put an OR condition on the post ID
-  -- filtering.
+
+  v_query := $$
+    SELECT array(
+      SELECT (no, start_id)::page_info
+      FROM (
+        SELECT
+          COALESCE($9, 0) - ROW_NUMBER() OVER () + 1 AS no,
+          x.id AS start_id
+        FROM (
+          SELECT
+            ptic.post_id AS id,
+            ROW_NUMBER() OVER (ORDER BY ptic.post_id ASC) AS rn
+          FROM post_tag_id_cache AS ptic
+          WHERE
+            -- Only scan backwards from the origin
+            ptic.post_id >= $6
+  $$;
+
   IF icount(v_tag_ids) > 0 THEN
-    v_pages := array(
-      SELECT (no, start_id)::page_info
-      FROM (
-        SELECT
-          COALESCE(p_origin_page.no, 0) - ROW_NUMBER() OVER () + 1 AS no,
-          x.id AS start_id
-        FROM (
-          SELECT
-            ptic.post_id AS id,
-            ROW_NUMBER() OVER (ORDER BY ptic.post_id ASC) AS rn
-          FROM post_tag_id_cache AS ptic
-          WHERE
-            -- Only scan backwards from the origin
-            ptic.post_id >= v_last_id
-            -- Reduce amount of posts to be scanned by filtering down
-            -- to only post IDs that have at least one of the search tags.
-            AND ptic.post_id IN (SELECT pt.post_id
-                                 FROM post_tag AS pt
-                                 WHERE pt.post_id BETWEEN v_last_id AND v_start_id
-                                   AND pt.tag_id = ANY(v_tag_ids))
-            -- Post must have all the included tags
-            AND ptic.tag_ids @> v_tag_ids
-            -- Post must not have any of the excluded tags
-            AND NOT ptic.tag_ids && v_exclude_tag_ids
-            -- Posts must match at least one tag matching each wildcard tag
-            AND NOT EXISTS(SELECT * FROM unnest(v_wildcard_tags) AS wct WHERE NOT ptic.tag_ids && wct.tag_ids)
-            -- Posts must not match any tag matching any wildcard exclude tag
-            AND NOT EXISTS(SELECT * FROM unnest(v_wildcard_exclude_tags) AS wct WHERE ptic.tag_ids && wct.tag_ids)
-          ORDER BY ptic.post_id ASC
-          LIMIT ((p_page_count + 1) * p_posts_per_page) -- X pages at a time
-        ) AS x
-        WHERE MOD(x.rn - 1, p_posts_per_page) = 0
-      ) AS x
-      WHERE x.no < p_origin_page.no
-    );
-  ELSE
-    v_pages := array(
-      SELECT (no, start_id)::page_info
-      FROM (
-        SELECT
-          COALESCE(p_origin_page.no, 0) - ROW_NUMBER() OVER () + 1 AS no,
-          x.id AS start_id
-        FROM (
-          SELECT
-            ptic.post_id AS id,
-            ROW_NUMBER() OVER (ORDER BY ptic.post_id ASC) AS rn
-          FROM post_tag_id_cache AS ptic
-          WHERE
-            -- Only scan backwards from the origin
-            ptic.post_id >= v_last_id
-            -- Post must have all the included tags
-            AND ptic.tag_ids @> v_tag_ids
-            -- Post must not have any of the excluded tags
-            AND NOT ptic.tag_ids && v_exclude_tag_ids
-            -- Posts must match at least one tag matching each wildcard tag
-            AND NOT EXISTS(SELECT * FROM unnest(v_wildcard_tags) AS wct WHERE NOT ptic.tag_ids && wct.tag_ids)
-            -- Posts must not match any tag matching any wildcard exclude tag
-            AND NOT EXISTS(SELECT * FROM unnest(v_wildcard_exclude_tags) AS wct WHERE ptic.tag_ids && wct.tag_ids)
-          ORDER BY ptic.post_id ASC
-          LIMIT ((p_page_count + 1) * p_posts_per_page) -- X pages at a time
-        ) AS x
-        WHERE MOD(x.rn - 1, p_posts_per_page) = 0
-      ) AS x
-      WHERE x.no < p_origin_page.no
-    );
+    v_query := v_query || $$
+      -- Reduce amount of posts to be scanned by filtering down
+      -- to only post IDs that have at least one of the search tags.
+      AND ptic.post_id IN (SELECT pt.post_id
+                           FROM post_tag AS pt
+                           WHERE pt.post_id BETWEEN $6 AND $5
+                             AND pt.tag_id = ANY($1))
+      -- Post must have all the included tags
+      AND ptic.tag_ids @> $1
+    $$;
   END IF;
+
+  IF icount(v_exclude_tag_ids) > 0 THEN
+    v_query := v_query || $$
+      -- Post must not have any of the excluded tags
+      AND NOT ptic.tag_ids && $2
+    $$;
+  END IF;
+
+  IF cardinality(v_wildcard_tags) > 0 THEN
+    v_query := v_query || $$
+      -- Posts must match at least one tag matching each wildcard tag
+      AND NOT EXISTS(SELECT * FROM unnest($3) AS wct WHERE NOT ptic.tag_ids && wct.tag_ids)
+    $$;
+  END IF;
+
+  IF cardinality(v_wildcard_exclude_tags) > 0 THEN
+    v_query := v_query || $$
+      -- Posts must not match any tag matching any wildcard exclude tag
+      AND NOT EXISTS(SELECT * FROM unnest($4) AS wct WHERE ptic.tag_ids && wct.tag_ids)
+    $$;
+  END IF;
+
+  v_query := v_query || $$
+          ORDER BY ptic.post_id ASC
+          LIMIT (($7 + 1) * $8) -- X pages at a time
+        ) AS x
+        WHERE MOD(x.rn - 1, $8) = 0
+      ) AS x
+      WHERE x.no < $9
+    );
+  $$;
+
+  EXECUTE v_query
+  INTO v_pages
+  USING
+    v_tag_ids,
+    v_exclude_tag_ids,
+    v_wildcard_tags,
+    v_wildcard_exclude_tags,
+    v_start_id,
+    v_last_id,
+    p_page_count,
+    p_posts_per_page,
+    p_origin_page.no;
 
   RETURN v_pages;
 END;
@@ -441,6 +476,8 @@ DECLARE
   v_page_count integer;
   v_last_page_start_id integer;
   v_last_page_post_ids integer[];
+  v_new_last_page_post_ids integer[];
+  v_query text;
 BEGIN
   SELECT *
   INTO v_tag_ids, v_exclude_tag_ids, v_wildcard_tags, v_wildcard_exclude_tags, v_valid
@@ -475,22 +512,59 @@ BEGIN
 
   -- If necessary, get additional last page posts
   IF icount(v_last_page_post_ids) < v_post_count THEN
-    v_last_page_post_ids := v_last_page_post_ids | array(
+    v_query := $$
+      SELECT array(
       SELECT ptic.post_id
       FROM post_tag_id_cache AS ptic
       WHERE
-        ptic.post_id > (SELECT COALESCE(MAX(id), 0) FROM unnest(v_last_page_post_ids) AS id)
+        ptic.post_id > (SELECT COALESCE(MAX(id), 0) FROM unnest($5) AS id)
+    $$;
+
+    IF icount(v_tag_ids) > 0 THEN
+      v_query := v_query || $$
         -- Post must have all the included tags
-        AND ptic.tag_ids @> v_tag_ids
+        AND ptic.tag_ids @> $1
+      $$;
+    END IF;
+
+    IF icount(v_exclude_tag_ids) > 0 THEN
+      v_query := v_query || $$
         -- Post must not have any of the excluded tags
-        AND NOT ptic.tag_ids && v_exclude_tag_ids
+        AND NOT ptic.tag_ids && $2
+      $$;
+    END IF;
+
+    IF cardinality(v_wildcard_tags) > 0 THEN
+      v_query := v_query || $$
         -- Posts must match at least one tag matching each wildcard tag
-        AND NOT EXISTS(SELECT * FROM unnest(v_wildcard_tags) AS wct WHERE NOT ptic.tag_ids && wct.tag_ids)
+        AND NOT EXISTS(SELECT * FROM unnest($3) AS wct WHERE NOT ptic.tag_ids && wct.tag_ids)
+      $$;
+    END IF;
+
+    IF cardinality(v_wildcard_exclude_tags) > 0 THEN
+      v_query := v_query || $$
         -- Posts must not match any tag matching any wildcard exclude tag
-        AND NOT EXISTS(SELECT * FROM unnest(v_wildcard_exclude_tags) AS wct WHERE ptic.tag_ids && wct.tag_ids)
-      ORDER BY ptic.post_id ASC
-      LIMIT p_posts_per_page - icount(v_last_page_post_ids)
-    );
+        AND NOT EXISTS(SELECT * FROM unnest($4) AS wct WHERE ptic.tag_ids && wct.tag_ids)
+      $$;
+    END IF;
+
+    v_query := v_query || $$
+        ORDER BY ptic.post_id ASC
+        LIMIT $6
+      );
+    $$;
+
+    EXECUTE v_query
+    INTO v_new_last_page_post_ids
+    USING
+      v_tag_ids,
+      v_exclude_tag_ids,
+      v_wildcard_tags,
+      v_wildcard_exclude_tags,
+      v_last_page_post_ids,
+      p_posts_per_page - icount(v_last_page_post_ids);
+
+    v_last_page_post_ids := v_last_page_post_ids | v_new_last_page_post_ids;
 
     -- Update search cache with posts
     UPDATE search_cache
@@ -525,6 +599,7 @@ DECLARE
   v_wildcard_tags wildcard_tag[];
   v_wildcard_exclude_tags wildcard_tag[];
   v_valid boolean;
+  v_query text;
 BEGIN
   SELECT *
   INTO v_tag_ids, v_exclude_tag_ids, v_wildcard_tags, v_wildcard_exclude_tags, v_valid
@@ -534,54 +609,62 @@ BEGIN
     RETURN;
   END IF;
 
-  -- Return different queries depending on whether
-  -- there are tags specified or not.
-  -- This should not be necessary, but IT IS,
-  -- because for some reason it's slow as hell
-  -- if you put an OR condition on the post ID
-  -- filtering.
-  IF icount(v_tag_ids) > 0 THEN
-    RETURN QUERY
+  v_query := $$
     SELECT p.*
     FROM post_tag_id_cache AS ptic
     JOIN view_post AS p ON p.id = ptic.post_id
     WHERE
       -- Only scan forward from the origin
-      ptic.post_id <= p_start_id
+      ptic.post_id <= $5
+  $$;
+
+  IF icount(v_tag_ids) > 0 THEN
+    v_query := v_query || $$
       -- Reduce amount of posts to be scanned by filtering down
       -- to only post IDs that have at least one of the search tags.
       AND ptic.post_id IN (SELECT pt.post_id
                            FROM post_tag AS pt
-                           WHERE pt.post_id <= p_start_id
-                             AND pt.tag_id = ANY(v_tag_ids))
+                           WHERE pt.post_id <= $5
+                             AND pt.tag_id = ANY($1))
       -- Post must have all the included tags
-      AND ptic.tag_ids @> v_tag_ids
-      -- Post must not have any of the excluded tags
-      AND NOT ptic.tag_ids && v_exclude_tag_ids
-      -- Posts must match at least one tag matching each wildcard tag
-      AND NOT EXISTS(SELECT * FROM unnest(v_wildcard_tags) AS wct WHERE NOT ptic.tag_ids && wct.tag_ids)
-      -- Posts must not match any tag matching any wildcard exclude tag
-      AND NOT EXISTS(SELECT * FROM unnest(v_wildcard_exclude_tags) AS wct WHERE ptic.tag_ids && wct.tag_ids)
-    ORDER BY ptic.post_id DESC
-    LIMIT p_limit;
-  ELSE
-    RETURN QUERY
-    SELECT p.*
-    FROM post_tag_id_cache AS ptic
-    JOIN view_post AS p ON p.id = ptic.post_id
-    WHERE
-      -- Only scan forward from the origin
-      ptic.post_id <= p_start_id
-      -- Post must have all the included tags
-      AND ptic.tag_ids @> v_tag_ids
-      -- Post must not have any of the excluded tags
-      AND NOT ptic.tag_ids && v_exclude_tag_ids
-      -- Posts must match at least one tag matching each wildcard tag
-      AND NOT EXISTS(SELECT * FROM unnest(v_wildcard_tags) AS wct WHERE NOT ptic.tag_ids && wct.tag_ids)
-      -- Posts must not match any tag matching any wildcard exclude tag
-      AND NOT EXISTS(SELECT * FROM unnest(v_wildcard_exclude_tags) AS wct WHERE ptic.tag_ids && wct.tag_ids)
-    ORDER BY ptic.post_id DESC
-    LIMIT p_limit;
+      AND ptic.tag_ids @> $1
+    $$;
   END IF;
+
+  IF icount(v_exclude_tag_ids) > 0 THEN
+    v_query := v_query || $$
+      -- Post must not have any of the excluded tags
+      AND NOT ptic.tag_ids && $2
+    $$;
+  END IF;
+
+  IF cardinality(v_wildcard_tags) > 0 THEN
+    v_query := v_query || $$
+      -- Posts must match at least one tag matching each wildcard tag
+      AND NOT EXISTS(SELECT * FROM unnest($3) AS wct WHERE NOT ptic.tag_ids && wct.tag_ids)
+    $$;
+  END IF;
+
+  IF cardinality(v_wildcard_exclude_tags) > 0 THEN
+    v_query := v_query || $$
+      -- Posts must not match any tag matching any wildcard exclude tag
+      AND NOT EXISTS(SELECT * FROM unnest($4) AS wct WHERE ptic.tag_ids && wct.tag_ids)
+    $$;
+  END IF;
+
+  v_query := v_query || $$
+    ORDER BY ptic.post_id DESC
+    LIMIT $6;
+  $$;
+
+  RETURN QUERY
+  EXECUTE v_query
+  USING
+    v_tag_ids,
+    v_exclude_tag_ids,
+    v_wildcard_tags,
+    v_wildcard_exclude_tags,
+    p_start_id,
+    p_limit;
 END;
 $BODY$ STABLE;
