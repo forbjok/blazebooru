@@ -2,6 +2,10 @@
 DROP FUNCTION get_tag_ids;
 DROP FUNCTION resolve_and_validate_tags;
 
+---- TYPES ----
+
+CREATE TYPE wildcard_tag AS (tag_ids integer[]);
+
 ---- FUNCTIONS ----
 
 -- Create get_tag_ids function
@@ -20,25 +24,40 @@ BEGIN
 END;
 $BODY$ STABLE;
 
--- Create get_wi_ids function
+-- Create get_wildcard_tag_ids function
 DROP FUNCTION IF EXISTS get_wildcard_tag_ids;
 CREATE FUNCTION get_wildcard_tag_ids(
   IN p_tags text[]
 )
-RETURNS SETOF integer[]
+RETURNS wildcard_tag[]
 LANGUAGE plpgsql
 
 AS $BODY$
 BEGIN
   p_tags := array(SELECT REPLACE(t, '*', '%') FROM unnest(p_tags) AS t WHERE t LIKE '%*%');
 
-  RETURN QUERY
-  SELECT array_agg(t.id)
-  FROM tag AS t
-  JOIN unnest(p_tags) AS wt ON t.tag LIKE wt
-  GROUP BY wt;
+  RETURN array(
+    SELECT ROW(array_agg(t.id))::wildcard_tag
+    FROM tag AS t
+    JOIN unnest(p_tags) AS wt ON t.tag LIKE wt
+    GROUP BY wt
+  );
 END;
 $BODY$ STABLE;
+
+-- Create get_wildcard_tags function
+DROP FUNCTION IF EXISTS get_wildcard_tags;
+CREATE FUNCTION get_wildcard_tags(
+  IN p_tags text[]
+)
+RETURNS text[]
+LANGUAGE plpgsql
+
+AS $BODY$
+BEGIN
+  RETURN array(SELECT REPLACE(t, '*', '%') FROM unnest(p_tags) AS t WHERE t LIKE '%*%');
+END;
+$BODY$ IMMUTABLE PARALLEL SAFE;
 
 -- Create resolve_and_validate_tags function
 CREATE FUNCTION resolve_and_validate_tags(
