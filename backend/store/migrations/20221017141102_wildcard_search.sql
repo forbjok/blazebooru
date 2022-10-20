@@ -168,6 +168,8 @@ BEGIN
 
   IF icount(p_tag_ids) > 0 THEN
     v_query := v_query || $$
+      -- Posts with fewer tags than the required tags cannot qualify
+      AND icount(ptic.tag_ids) >= icount($1)
       -- Post must have all the included tags
       AND ptic.tag_ids @> $1
     $$;
@@ -374,6 +376,8 @@ BEGIN
 
   IF icount(v_tag_ids) > 0 THEN
     v_query := v_query || $$
+      -- Posts with fewer tags than the required tags cannot qualify
+      AND icount(ptic.tag_ids) >= icount($1)
       -- Post must have all the included tags
       AND ptic.tag_ids @> $1
     $$;
@@ -482,12 +486,8 @@ BEGIN
 
   IF icount(v_tag_ids) > 0 THEN
     v_query := v_query || $$
-      -- Reduce amount of posts to be scanned by filtering down
-      -- to only post IDs that have at least one of the search tags.
-      AND ptic.post_id IN (SELECT pt.post_id
-                           FROM post_tag AS pt
-                           WHERE pt.post_id BETWEEN $6 AND $5
-                             AND pt.tag_id = ANY($1))
+      -- Posts with fewer tags than the required tags cannot qualify
+      AND icount(ptic.tag_ids) >= icount($1)
       -- Post must have all the included tags
       AND ptic.tag_ids @> $1
     $$;
@@ -604,6 +604,8 @@ BEGIN
 
   IF icount(v_tag_ids) > 0 THEN
     v_query := v_query || $$
+      -- Posts with fewer tags than the required tags cannot qualify
+      AND icount(ptic.tag_ids) >= icount($1)
       -- Post must have all the included tags
       AND ptic.tag_ids @> $1
     $$;
@@ -688,6 +690,8 @@ BEGIN
 
   IF icount(v_tag_ids) > 0 THEN
     v_query := v_query || $$
+      -- Posts with fewer tags than the required tags cannot qualify
+      AND icount(ptic.tag_ids) >= icount($1)
       -- Post must have all the included tags
       AND ptic.tag_ids @> $1
     $$;
