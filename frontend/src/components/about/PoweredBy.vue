@@ -12,5 +12,7 @@
   text-align: center;
 
   font-size: 0.9rem;
+
+  cursor: default;
 }
 </style>
