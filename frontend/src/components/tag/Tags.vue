@@ -25,7 +25,14 @@ const sortedTags = computed(() => {
   <div class="tags">
     <div v-for="t of sortedTags" :key="t" class="tag">
       <span class="tag-tag" :title="t">{{ t }}</span
-      ><button v-if="actions" class="delete-button link-button" type="button" title="Delete" @click="emit('delete', t)">
+      ><button
+        v-if="actions"
+        class="delete-button link-button"
+        type="button"
+        title="Delete"
+        tabindex="-1"
+        @click="emit('delete', t)"
+      >
         x
       </button>
     </div>
