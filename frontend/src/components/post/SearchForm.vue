@@ -14,40 +14,41 @@ const props = defineProps<Props>();
 
 const { modelValue: search } = toRefs(props);
 
-const tags = search.value.tags;
-const exclude_tags = search.value.exclude_tags;
-
 function removeItem<T>(array: T[], value: T) {
   const index = array.findIndex((v) => v === value);
   array.splice(index, 1);
 }
 
 const includeTag = (tag: string) => {
+  const _search = search.value;
+
   // Don't add duplicate tags
-  if (tags.includes(tag)) {
+  if (_search.tags.includes(tag)) {
     return;
   }
 
   // If it's in exclude tags, remove it from there.
-  if (exclude_tags.includes(tag)) {
-    removeItem(exclude_tags, tag);
+  if (_search.exclude_tags.includes(tag)) {
+    removeItem(_search.exclude_tags, tag);
   }
 
-  tags.push(tag);
+  _search.tags.push(tag);
 };
 
 const excludeTag = (tag: string) => {
+  const _search = search.value;
+
   // Don't add duplicate tags
-  if (exclude_tags.includes(tag)) {
+  if (_search.exclude_tags.includes(tag)) {
     return;
   }
 
   // If it's in include tags, remove it from there.
-  if (tags.includes(tag)) {
-    removeItem(tags, tag);
+  if (_search.tags.includes(tag)) {
+    removeItem(_search.tags, tag);
   }
 
-  exclude_tags.push(tag);
+  _search.exclude_tags.push(tag);
 };
 
 const enterTags = (tags: string[], exclude_tags: string[]) => {
@@ -64,9 +65,14 @@ const enterTags = (tags: string[], exclude_tags: string[]) => {
 <template>
   <div class="search-form">
     <label>Search</label>
-    <Tags :tags="search.tags" :actions="true" class="include" @delete="(t) => removeItem(tags, t)" />
-    <Tags :tags="search.exclude_tags" :actions="true" class="exclude" @delete="(t) => removeItem(exclude_tags, t)" />
     <TagEntry @enter="enterTags" />
+    <Tags :tags="search.tags" :actions="true" class="include" @delete="(t) => removeItem(search.tags, t)" />
+    <Tags
+      :tags="search.exclude_tags"
+      :actions="true"
+      class="exclude"
+      @delete="(t) => removeItem(search.exclude_tags, t)"
+    />
   </div>
 </template>
 

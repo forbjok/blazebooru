@@ -10,7 +10,7 @@ import type { User } from "@/models/api/user";
 // because the default one doesn't.
 const serializer = {
   read: (v: any) => (v ? JSON.parse(v) : undefined),
-  write: (v: any) => JSON.stringify(v),
+  write: (v: any) => (v ? JSON.stringify(v) : ""),
 };
 
 export const useAuthStore = defineStore("auth", () => {

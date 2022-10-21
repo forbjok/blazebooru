@@ -75,6 +75,10 @@ const excludeTag = (tag: string) => {
   // Sort tags alphabetically
   search.value.exclude_tags.sort((a, b) => a.localeCompare(b));
 };
+
+const setTag = (tag: string) => {
+  search.value.tags = [tag];
+};
 </script>
 
 <template>
@@ -87,9 +91,11 @@ const excludeTag = (tag: string) => {
           <label>Tags:</label>
           <div class="tags">
             <div v-for="(t, i) of mainStore.currentTags" :key="i" class="tag">
-              <button class="link-button" @click="includeTag(t)">+</button>
-              <button class="link-button" @click="excludeTag(t)">-</button>
-              <span class="tag-text" :class="{ included: search.tags.includes(t) }">{{ t }}</span>
+              <button class="tag-button link-button" @click="includeTag(t)">+</button>
+              <button class="tag-button link-button" @click="excludeTag(t)">-</button>
+              <button class="tag-text link-button" :class="{ included: search.tags.includes(t) }" @click="setTag(t)">
+                {{ t }}
+              </button>
             </div>
           </div>
           <div class="buffer"></div>
@@ -166,7 +172,7 @@ const excludeTag = (tag: string) => {
 
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: 0.4rem;
 
     background-color: var(--color-panel-background);
 
@@ -177,14 +183,16 @@ const excludeTag = (tag: string) => {
     .tags {
       display: flex;
       flex-direction: column;
-      gap: 0.4rem;
+
+      font-size: 0.9rem;
 
       overflow: hidden;
 
       .tag {
         display: flex;
         flex-direction: row;
-        gap: 0.4rem;
+        align-items: center;
+        gap: 0.2rem;
 
         .tag-text {
           text-overflow: ellipsis;
@@ -195,6 +203,15 @@ const excludeTag = (tag: string) => {
             color: var(--color-tag-included);
           }
         }
+      }
+
+      .tag-button {
+        background-color: var(--color-panel-button-background);
+        border-radius: 0.2rem;
+        font-size: 0.8rem;
+
+        width: 1rem;
+        height: 1rem;
       }
     }
   }
