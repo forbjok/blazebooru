@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { toRefs } from "vue";
+import { ref, toRefs } from "vue";
 
 import TagEntry from "@/components/tag/TagEntry.vue";
 import Tags from "@/components/tag/Tags.vue";
@@ -13,6 +13,8 @@ interface Props {
 const props = defineProps<Props>();
 
 const { modelValue: search } = toRefs(props);
+
+const tagEntry = ref<typeof TagEntry>();
 
 function removeItem<T>(array: T[], value: T) {
   const index = array.findIndex((v) => v === value);
@@ -60,12 +62,20 @@ const enterTags = (tags: string[], exclude_tags: string[]) => {
     excludeTag(t);
   }
 };
+
+const focus = () => {
+  tagEntry.value?.focus();
+};
+
+defineExpose({
+  focus,
+});
 </script>
 
 <template>
   <div class="search-form">
     <label>Search</label>
-    <TagEntry @enter="enterTags" />
+    <TagEntry ref="tagEntry" @enter="enterTags" />
     <Tags :tags="search.tags" :actions="true" class="include" @delete="(t) => removeItem(search.tags, t)" />
     <Tags
       :tags="search.exclude_tags"

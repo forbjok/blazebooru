@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from "vue";
+import { nextTick, onMounted, ref, watch } from "vue";
 
 import MainLayout from "@/components/MainLayout.vue";
 import Posts from "@/components/post/Posts.vue";
@@ -13,6 +13,8 @@ const route = useRoute();
 const router = useRouter();
 
 const mainStore = useMainStore();
+
+const searchForm = ref<typeof SearchForm>();
 
 const search = ref<Search>(mainStore.activeSearch);
 const pageNumbers = mainStore.getPageNumbers(12);
@@ -44,6 +46,10 @@ onMounted(async () => {
   } else {
     router.replace({ name: "browse", query: { p: mainStore.currentPage } });
   }
+
+  nextTick(() => {
+    searchForm.value?.focus();
+  });
 });
 
 const includeTag = (tag: string) => {
@@ -87,7 +93,7 @@ const setTag = (tag: string) => {
       <!-- Desktop -->
       <div class="layout desktop">
         <div class="side-panel">
-          <SearchForm v-model="search" />
+          <SearchForm ref="searchForm" v-model="search" />
           <label>Tags:</label>
           <div class="tags">
             <div v-for="(t, i) of mainStore.currentTags" :key="i" class="tag">

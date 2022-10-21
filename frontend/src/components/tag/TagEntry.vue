@@ -17,6 +17,8 @@ const emit = defineEmits<{
 
 const { button } = toRefs(props);
 
+const tagInput = ref<HTMLInputElement>();
+
 const text = ref("");
 
 const submit = () => {
@@ -60,14 +62,19 @@ const submit = () => {
   text.value = "";
 };
 
+const focus = () => {
+  tagInput.value?.focus();
+};
+
 defineExpose({
+  focus,
   submit,
 });
 </script>
 
 <template>
   <form class="tags-entry" @submit.prevent="submit">
-    <input type="text" v-model="text" placeholder="Tag(s)" title="Enter comma-separated list of tags" />
+    <input ref="tagInput" type="text" v-model="text" placeholder="Tag(s)" title="Enter comma-separated list of tags" />
     <input v-if="button" type="submit" value="Add" />
   </form>
 </template>

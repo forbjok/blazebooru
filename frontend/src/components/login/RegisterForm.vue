@@ -1,14 +1,24 @@
 <script setup lang="ts">
 import type { LoginRequest } from "@/models/api/login";
-import { reactive } from "vue";
+import { reactive, ref } from "vue";
 
 const emit = defineEmits<{
   (e: "register", request: LoginRequest): void;
 }>();
 
+const usernameInput = ref<HTMLInputElement>();
+
 const vm = reactive<LoginRequest>({
   name: "",
   password: "",
+});
+
+const focus = () => {
+  usernameInput.value?.focus();
+};
+
+defineExpose({
+  focus,
 });
 </script>
 
@@ -16,6 +26,7 @@ const vm = reactive<LoginRequest>({
   <form class="register-form" @submit.prevent="emit('register', vm)">
     <label>Username</label>
     <input
+      ref="usernameInput"
       v-model="vm.name"
       name="user_name"
       type="text"

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { nextTick, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 
 import MainLayout from "@/components/MainLayout.vue";
@@ -13,6 +14,14 @@ const router = useRouter();
 const authStore = useAuthStore();
 const mainStore = useMainStore();
 
+const form = ref<typeof LoginForm>();
+
+onMounted(() => {
+  nextTick(() => {
+    form.value?.focus();
+  });
+});
+
 const login = async (request: LoginRequest) => {
   const success = await authStore.login(request);
   if (success) {
@@ -26,7 +35,7 @@ const login = async (request: LoginRequest) => {
     <MainLayout>
       <div class="content">
         <div class="title">Login</div>
-        <LoginForm @log-in="login" />
+        <LoginForm ref="form" @log-in="login" />
       </div>
     </MainLayout>
   </main>
