@@ -1,4 +1,4 @@
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { defineStore } from "pinia";
 import { useStorage } from "@vueuse/core";
 import axios from "axios";
@@ -15,9 +15,10 @@ const serializer = {
 
 export const useAuthStore = defineStore("auth", () => {
   const auth = useStorage<LoginResponse | undefined>("bb_auth", undefined, undefined, { serializer });
-  const userProfile = useStorage<User | undefined>("bb_user", undefined, undefined, { serializer });
+  const userProfile = ref<User>();
 
   const isAuthorized = computed(() => !!auth.value?.access_token);
+  const isAdmin = computed(() => (userProfile.value?.rank || -1) > 0);
 
   async function getAccessToken() {
     if (!(await refreshIfNeeded())) {
@@ -126,5 +127,7 @@ export const useAuthStore = defineStore("auth", () => {
     userProfile.value = undefined;
   }
 
-  return { isAuthorized, userProfile, getAccessToken, getAuthHeaders, login, logout, register };
+  getUserProfile();
+
+  return { isAuthorized, isAdmin, userProfile, getAccessToken, getAuthHeaders, login, logout, register };
 });

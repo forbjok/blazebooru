@@ -18,7 +18,11 @@ const logout = async () => {
         </span>
       </span>
       <span v-if="authStore.isAuthorized" class="user-authorized">
-        <span class="username"><i class="fa-solid fa-user"></i> {{ authStore.userProfile?.name }}</span>
+        <span class="username" :class="{ admin: authStore.isAdmin }"
+          ><span v-if="!authStore.isAdmin"><i class="fa-solid fa-user"></i></span
+          ><span v-if="authStore.isAdmin"><i class="fa-solid fa-crown"></i></span>
+          {{ authStore.userProfile?.name }}</span
+        >
         <span class="logout"> [ <button class="link-button" @click="logout">Log out</button> ] </span>
       </span>
       <span v-if="!authStore.isAuthorized" class="user-unauthorized">
@@ -61,6 +65,8 @@ const logout = async () => {
   box-shadow: -0.5rem 1px 1rem rgba(0, 0, 0, 0.2);
   color: var(--color-headerbar-text);
 
+  cursor: default;
+
   .nav {
     flex-grow: 1;
   }
@@ -71,6 +77,10 @@ const logout = async () => {
 
   .username {
     padding-right: 1rem;
+
+    &.admin {
+      color: var(--color-username-admin);
+    }
   }
 }
 </style>

@@ -10,11 +10,13 @@ import { make_image_path } from "@/utils/path";
 
 interface Props {
   post: Post;
-  can_edit?: boolean;
+  can_edit_post?: boolean;
+  can_edit_tags?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  can_edit: false,
+  can_edit_post: false,
+  can_edit_tags: false,
 });
 
 const emit = defineEmits<{
@@ -84,23 +86,30 @@ const deletePost = () => {
       <div class="uploader" title="Uploader"><i class="fa-solid fa-user"></i> {{ post.user_name }}</div>
       <div class="actions">
         <a :href="make_image_path(post)" :download="post.filename"><i class="fa-solid fa-download"></i> Download</a>
-        <button v-if="can_edit" class="delete-button link-button" @click="confirmDelete?.show()">
+        <button v-if="can_edit_post" class="delete-button link-button" @click="confirmDelete?.show()">
           <i class="fa-solid fa-trash"></i> Delete
         </button>
-        <button v-if="can_edit" class="edit-button link-button" @click="toggleEdit">
+        <button v-if="can_edit_post || can_edit_tags" class="edit-button link-button" @click="toggleEdit">
           <i class="fa-solid fa-pen-to-square"></i> Edit
         </button>
       </div>
     </div>
     <hr />
-    <div v-if="!editing" class="post-info">
+    <div v-if="!(can_edit_post && editing)" class="post-info">
       <div v-if="post.title" class="title" :title="post.title">
         {{ post.title }}
       </div>
       <div v-if="post.source" class="source">Source: {{ post.source }}</div>
       <div v-if="post.tags" class="tags">
         Tags:
-        <Tags :tags="post.tags" />
+        <Tags v-if="!editing" :tags="post.tags" />
+        <form v-if="editing" class="edit-form" @submit.prevent="update">
+          <TagsEditor ref="tagsEditor" v-model="editing.tags" />
+          <div class="form-buttons">
+            <input class="cancel-button" type="button" value="Cancel" @click="cancelEdit" />
+            <input class="save-button" type="submit" value="Save" />
+          </div>
+        </form>
       </div>
       <hr />
       <div v-if="post.description" class="description">
@@ -108,7 +117,7 @@ const deletePost = () => {
       </div>
       <hr />
     </div>
-    <form v-if="editing" class="edit-form" @submit.prevent="update">
+    <form v-if="can_edit_post && editing" class="edit-form" @submit.prevent="update">
       <label>Title</label>
       <input name="title" type="text" v-model="editing.title" placeholder="Title" title="Title" />
       <label>Source</label>

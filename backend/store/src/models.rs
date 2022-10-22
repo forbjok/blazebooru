@@ -8,6 +8,7 @@ pub struct User {
     pub updated_at: DateTime<Utc>,
     pub name: String,
     pub password_hash: String,
+    pub rank: i16,
 }
 
 #[derive(Debug, sqlx::FromRow)]

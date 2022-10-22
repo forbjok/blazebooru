@@ -30,7 +30,8 @@ const post = ref<PostModel>();
 const comments = ref<Comment[]>([]);
 const expand_image = ref(false);
 
-const can_edit = computed(() => authStore.userProfile?.id === post.value?.user_id);
+const can_edit_post = computed(() => authStore.isAdmin || authStore.userProfile?.id === post.value?.user_id);
+const can_edit_tags = computed(() => authStore.isAuthorized);
 
 const file_url = computed(() => {
   if (!post.value) {
@@ -50,6 +51,15 @@ const fetchPost = async () => {
 };
 
 const updatePost = async (update_post: UpdatePost) => {
+  // If user is not allowed to edit the post info,
+  // remove everything except the tags.
+  if (!can_edit_post.value) {
+    update_post = {
+      add_tags: update_post.add_tags,
+      remove_tags: update_post.remove_tags,
+    };
+  }
+
   await mainStore.updatePost(id.value, update_post);
   await fetchPost();
 };
@@ -75,7 +85,14 @@ const postComment = async () => {
       <!-- Desktop -->
       <div class="layout desktop">
         <div class="layout-side">
-          <PostInfo v-if="post" :post="post" :can_edit="can_edit" @delete="deletePost" @update="updatePost" />
+          <PostInfo
+            v-if="post"
+            :post="post"
+            :can_edit_post="can_edit_post"
+            :can_edit_tags="can_edit_tags"
+            @delete="deletePost"
+            @update="updatePost"
+          />
           <label>Comments</label>
           <div class="post-comments">
             <PostComment v-for="c in comments" :key="c.id" :comment="c" />
@@ -111,7 +128,7 @@ const postComment = async () => {
           </a>
         </div>
         <div class="post-info">
-          <PostInfo v-if="post" :post="post" :can_edit="can_edit" @delete="deletePost" @update="updatePost" />
+          <PostInfo v-if="post" :post="post" :can_edit_post="can_edit_post" @delete="deletePost" @update="updatePost" />
           <label>Comments</label>
           <div class="post-comments">
             <PostComment v-for="c in comments" :key="c.id" :comment="c" />

@@ -50,6 +50,7 @@ pub struct User {
     pub id: i32,
     pub created_at: DateTime<Utc>,
     pub name: String,
+    pub rank: i16,
 }
 
 #[derive(Debug, Serialize)]

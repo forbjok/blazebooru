@@ -30,6 +30,7 @@ impl From<dbm::User> for vm::User {
             id: u.id,
             created_at: u.created_at,
             name: u.name,
+            rank: u.rank,
         }
     }
 }

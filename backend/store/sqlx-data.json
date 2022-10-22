@@ -202,9 +202,15 @@
           "name": "password_hash",
           "ordinal": 4,
           "type_info": "Text"
+        },
+        {
+          "name": "rank",
+          "ordinal": 5,
+          "type_info": "Int2"
         }
       ],
       "nullable": [
+        false,
         false,
         false,
         false,
@@ -891,9 +897,15 @@
           "name": "password_hash",
           "ordinal": 4,
           "type_info": "Text"
+        },
+        {
+          "name": "rank",
+          "ordinal": 5,
+          "type_info": "Int2"
         }
       ],
       "nullable": [
+        null,
         null,
         null,
         null,
@@ -1030,9 +1042,15 @@
           "name": "password_hash",
           "ordinal": 4,
           "type_info": "Text"
+        },
+        {
+          "name": "rank",
+          "ordinal": 5,
+          "type_info": "Int2"
         }
       ],
       "nullable": [
+        false,
         false,
         false,
         false,
