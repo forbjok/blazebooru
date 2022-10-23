@@ -1,5 +1,6 @@
 mod auth;
 mod post;
+mod tag;
 mod user;
 
 use std::sync::Arc;
@@ -28,11 +29,13 @@ pub fn router(server: Arc<BlazeBooruServer>) -> Router<Arc<BlazeBooruServer>> {
     let auth = auth::router(server.clone());
     let post = post::router(server.clone());
     let user = user::router(server.clone());
+    let tag = tag::router(server.clone());
 
     Router::with_state(server)
         .nest("/auth", auth)
         .nest("/post", post)
         .nest("/user", user)
+        .nest("/tag", tag)
 }
 
 impl IntoResponse for AuthError {

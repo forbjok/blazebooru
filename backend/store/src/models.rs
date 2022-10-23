@@ -61,6 +61,14 @@ pub struct PostComment {
     pub comment: String,
 }
 
+#[derive(Debug, sqlx::FromRow)]
+pub struct ViewTag {
+    pub id: Option<i32>,
+    pub tag: Option<String>,
+    pub alias_of_tag: Option<String>,
+    pub implied_tags: Option<Vec<String>>,
+}
+
 #[derive(Debug, sqlx::Type)]
 #[sqlx(type_name = "new_post")]
 pub struct NewPost {
@@ -88,6 +96,14 @@ pub struct UpdatePost {
 
     pub add_tags: Vec<String>,
     pub remove_tags: Vec<String>,
+}
+
+#[derive(Debug, sqlx::Type)]
+#[sqlx(type_name = "update_tag")]
+pub struct UpdateTag {
+    pub alias_of_tag: Option<String>,
+    pub add_implied_tags: Vec<String>,
+    pub remove_implied_tags: Vec<String>,
 }
 
 #[derive(Debug, sqlx::Type)]

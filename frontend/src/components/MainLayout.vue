@@ -16,6 +16,9 @@ const logout = async () => {
         <span v-if="authStore.isAuthorized" class="upload">
           [ <router-link :to="{ name: 'upload' }">Upload</router-link> ]
         </span>
+        <span v-if="authStore.isAdmin" class="tags admin">
+          [ <router-link :to="{ name: 'tags' }">Tags</router-link> ]
+        </span>
       </span>
       <span v-if="authStore.isAuthorized" class="user-authorized">
         <span class="username" :class="{ admin: authStore.isAdmin }"
@@ -69,6 +72,16 @@ const logout = async () => {
 
   .nav {
     flex-grow: 1;
+
+    .admin {
+      a {
+        color: var(--color-username-admin);
+
+        &:hover {
+          filter: brightness(0.9);
+        }
+      }
+    }
   }
 
   .user {

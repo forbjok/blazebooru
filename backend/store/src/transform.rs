@@ -108,6 +108,27 @@ impl From<vm::PageInfo> for dbm::PageInfo {
     }
 }
 
+impl From<dbm::ViewTag> for vm::Tag {
+    fn from(t: dbm::ViewTag) -> Self {
+        vm::Tag {
+            id: t.id.unwrap(),
+            tag: t.tag.unwrap(),
+            alias_of_tag: t.alias_of_tag,
+            implied_tags: t.implied_tags.unwrap(),
+        }
+    }
+}
+
+impl From<vm::UpdateTag> for dbm::UpdateTag {
+    fn from(t: vm::UpdateTag) -> Self {
+        dbm::UpdateTag {
+            alias_of_tag: t.alias_of_tag,
+            add_implied_tags: t.add_implied_tags,
+            remove_implied_tags: t.remove_implied_tags,
+        }
+    }
+}
+
 pub fn dbm_update_post_from_vm(id: i32, p: vm::UpdatePost) -> dbm::UpdatePost {
     dbm::UpdatePost {
         id: Some(id),

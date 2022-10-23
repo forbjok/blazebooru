@@ -1,6 +1,7 @@
 mod auth;
 mod comment;
 mod post;
+mod tag;
 mod user;
 
 use anyhow::Context;

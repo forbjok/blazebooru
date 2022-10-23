@@ -5,6 +5,7 @@ import RegisterView from "@/views/RegisterView.vue";
 import PostView from "@/views/PostView.vue";
 import BrowseView from "@/views/BrowseView.vue";
 import UploadView from "@/views/UploadView.vue";
+import TagsView from "@/views/TagsView.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -43,6 +44,11 @@ const router = createRouter({
           id: Number(r.params.id),
         };
       },
+    },
+    {
+      path: "/tags",
+      name: "tags",
+      component: TagsView,
     },
     {
       path: "/upload",

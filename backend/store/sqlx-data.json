@@ -408,6 +408,44 @@
     },
     "query": "SELECT * FROM create_post_comment($1, $2);"
   },
+  "8e16a4f48a76f99b175d1c2be0a717408682fe93d54dea2147a7a81093534824": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int4"
+        },
+        {
+          "name": "tag",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "alias_of_tag",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "implied_tags",
+          "ordinal": 3,
+          "type_info": "TextArray"
+        }
+      ],
+      "nullable": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "parameters": {
+        "Left": [
+          "Int4"
+        ]
+      }
+    },
+    "query": "SELECT * FROM view_tag WHERE id = $1;"
+  },
   "8fd00403c860ceadbab3e7d2b6bbf9a3d925f3663bc1644bfd27b7732b6ac639": {
     "describe": {
       "columns": [
@@ -427,6 +465,48 @@
       }
     },
     "query": "SELECT * FROM invalidate_session($1);"
+  },
+  "a91f7f9abafc343cae066a9dc9b9f9a1e09387b3847fdd0c21fe3acf5157ff07": {
+    "describe": {
+      "columns": [
+        {
+          "name": "update_tag",
+          "ordinal": 0,
+          "type_info": "Bool"
+        }
+      ],
+      "nullable": [
+        null
+      ],
+      "parameters": {
+        "Left": [
+          "Int4",
+          {
+            "Custom": {
+              "kind": {
+                "Composite": [
+                  [
+                    "alias_of_tag",
+                    "Text"
+                  ],
+                  [
+                    "add_implied_tags",
+                    "TextArray"
+                  ],
+                  [
+                    "remove_implied_tags",
+                    "TextArray"
+                  ]
+                ]
+              },
+              "name": "update_tag"
+            }
+          },
+          "Int4"
+        ]
+      }
+    },
+    "query": "SELECT update_tag($1, $2, $3);"
   },
   "ab1853bba8723f3c055f0fccd0c6065986d121d3be471479f9bd0ca0f9f5bff2": {
     "describe": {
@@ -1014,6 +1094,42 @@
       }
     },
     "query": "SELECT * FROM refresh_refresh_token($1, $2);"
+  },
+  "e9e9efa66a473588e9a35df6dbb2ee18e133ed804335ac86fbdbf138ee434702": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int4"
+        },
+        {
+          "name": "tag",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "alias_of_tag",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "implied_tags",
+          "ordinal": 3,
+          "type_info": "TextArray"
+        }
+      ],
+      "nullable": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "parameters": {
+        "Left": []
+      }
+    },
+    "query": "SELECT * FROM view_tag ORDER BY id ASC;"
   },
   "f7f1ebf1bc873406e6c513e2a210de78ecf4986aae23c08fc846427ccc679a8b": {
     "describe": {

@@ -31,6 +31,23 @@ pub struct UpdatePost {
 }
 
 #[derive(Debug, Serialize)]
+pub struct Tag {
+    pub id: i32,
+    pub tag: String,
+    pub alias_of_tag: Option<String>,
+    pub implied_tags: Vec<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct UpdateTag {
+    pub alias_of_tag: Option<String>,
+    #[serde(default)]
+    pub add_implied_tags: Vec<String>,
+    #[serde(default)]
+    pub remove_implied_tags: Vec<String>,
+}
+
+#[derive(Debug, Serialize)]
 pub struct Comment {
     pub id: i32,
     pub created_at: DateTime<Utc>,

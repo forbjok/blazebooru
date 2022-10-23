@@ -9,6 +9,7 @@ mod auth;
 mod comment;
 pub mod image;
 mod post;
+mod tag;
 mod user;
 
 pub struct BlazeBooruCore {
