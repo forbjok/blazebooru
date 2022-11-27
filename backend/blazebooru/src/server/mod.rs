@@ -38,7 +38,7 @@ impl BlazeBooruServer {
     pub async fn run_server(self, shutdown: impl Future<Output = ()>) -> Result<(), anyhow::Error> {
         let server = Arc::new(self);
 
-        let api = api::router(server.clone());
+        let api = api::router();
 
         let mut app = Router::new().nest("/api", api);
 
@@ -50,9 +50,11 @@ impl BlazeBooruServer {
             app = app.merge(axum_extra::routing::SpaRouter::new("/f", &server.core.public_path));
         }
 
-        app = app.layer(tower_http::trace::TraceLayer::new_for_http());
+        let app = app
+            .layer(tower_http::trace::TraceLayer::new_for_http())
+            .with_state(server);
 
-        let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
+        let addr = "[::]:3000".parse().unwrap();
 
         info!("Web server listening on: {addr}");
         axum::Server::bind(&addr)

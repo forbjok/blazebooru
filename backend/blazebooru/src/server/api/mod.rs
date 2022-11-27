@@ -25,13 +25,13 @@ struct Authorized {
     claims: AuthClaims,
 }
 
-pub fn router(server: Arc<BlazeBooruServer>) -> Router<Arc<BlazeBooruServer>> {
-    let auth = auth::router(server.clone());
-    let post = post::router(server.clone());
-    let user = user::router(server.clone());
-    let tag = tag::router(server.clone());
+pub fn router() -> Router<Arc<BlazeBooruServer>> {
+    let auth = auth::router();
+    let post = post::router();
+    let user = user::router();
+    let tag = tag::router();
 
-    Router::with_state(server)
+    Router::new()
         .nest("/auth", auth)
         .nest("/post", post)
         .nest("/user", user)

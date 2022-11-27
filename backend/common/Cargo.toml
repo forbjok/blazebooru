@@ -8,12 +8,12 @@ edition = "2021"
 
 [dependencies]
 blazebooru_models = { path = "../models" }
-anyhow = "1.0.65"
-blake3 = "1.3.1"
-bytes = "1.2.1"
-chrono = { version = "0.4.22", features = ["serde"] }
-futures-core = "0.3.24"
-futures-util = "0.3.24"
-tokio = "1.21.2"
+anyhow = "1.0.66"
+blake3 = "1.3.3"
+bytes = "1.3.0"
+chrono = { version = "0.4.23", features = ["serde"] }
+futures-core = "0.3.25"
+futures-util = "0.3.25"
+tokio = "1.22.0"
 tokio-util = "0.7.4"
 tracing = "0.1.37"

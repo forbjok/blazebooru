@@ -20,8 +20,8 @@ struct RegisterUserRequest {
     password: String,
 }
 
-pub fn router(server: Arc<BlazeBooruServer>) -> Router<Arc<BlazeBooruServer>> {
-    Router::with_state(server)
+pub fn router() -> Router<Arc<BlazeBooruServer>> {
+    Router::new()
         .route("/profile", get(get_user_profile))
         .route("/register", post(register_user))
 }

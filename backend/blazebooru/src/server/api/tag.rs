@@ -13,8 +13,8 @@ use crate::server::api::Authorized;
 use crate::server::ApiError;
 use crate::server::BlazeBooruServer;
 
-pub fn router(server: Arc<BlazeBooruServer>) -> Router<Arc<BlazeBooruServer>> {
-    Router::with_state(server)
+pub fn router() -> Router<Arc<BlazeBooruServer>> {
+    Router::new()
         .route("/", get(get_view_tags))
         .route("/:id", get(get_view_tag))
         .route("/:id/update", post(update_tag))

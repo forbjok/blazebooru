@@ -105,7 +105,7 @@ impl BlazeBooruCore {
         }: &ProcessFileResult<'a>,
     ) -> Result<ProcessImageResult<'a>, anyhow::Error> {
         // Open image file
-        let img = image::open(&original_image_path)?;
+        let img = image::open(original_image_path)?;
         let (width, height) = img.dimensions();
 
         // Generate thumbnail

@@ -1,11 +1,12 @@
 use std::sync::Arc;
 
 use anyhow::{anyhow, Context};
-use axum::extract::ContentLengthLimit;
+use axum::extract::DefaultBodyLimit;
 use axum::extract::Multipart;
 use axum::extract::Path;
 use axum::extract::Query;
 use axum::extract::State;
+use axum::handler::Handler;
 use axum::routing::{get, post};
 use axum::Json;
 use axum::Router;
@@ -19,7 +20,7 @@ use crate::server::api::Authorized;
 use crate::server::ApiError;
 use crate::server::BlazeBooruServer;
 
-const MAX_IMAGE_SIZE: u64 = 10_000_000; // 10MB
+const MAX_IMAGE_SIZE: usize = 10_000_000; // 10MB
 
 #[derive(Deserialize)]
 struct CalculatePagesQuery {
@@ -67,8 +68,8 @@ struct PostSearchQuery {
     exclude_tags: Vec<String>,
 }
 
-pub fn router(server: Arc<BlazeBooruServer>) -> Router<Arc<BlazeBooruServer>> {
-    Router::with_state(server)
+pub fn router() -> Router<Arc<BlazeBooruServer>> {
+    Router::new()
         .route("/", get(get_view_posts))
         .route("/:id", get(get_view_post).delete(delete_post))
         .route("/:id/update", post(update_post))
@@ -76,7 +77,10 @@ pub fn router(server: Arc<BlazeBooruServer>) -> Router<Arc<BlazeBooruServer>> {
         .route("/:id/comments/new", post(post_comment))
         .route("/pages", get(calculate_pages))
         .route("/pages/last", get(calculate_last_page))
-        .route("/upload", post(upload_post))
+        .route(
+            "/upload",
+            post(upload_post.layer(DefaultBodyLimit::max(MAX_IMAGE_SIZE))),
+        )
 }
 
 #[axum::debug_handler(state = Arc<BlazeBooruServer>)]
@@ -203,7 +207,7 @@ async fn calculate_last_page(
 async fn upload_post(
     State(server): State<Arc<BlazeBooruServer>>,
     auth: Authorized,
-    ContentLengthLimit(mut multipart): ContentLengthLimit<Multipart, { MAX_IMAGE_SIZE }>,
+    mut multipart: Multipart,
 ) -> Result<Json<i32>, ApiError> {
     let mut info: Option<PostInfo> = None;
     let mut file: Option<(HashedFile, String)> = None;

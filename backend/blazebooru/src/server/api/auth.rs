@@ -31,8 +31,8 @@ struct RefreshRequest {
     pub refresh_token: Uuid,
 }
 
-pub fn router(server: Arc<BlazeBooruServer>) -> Router<Arc<BlazeBooruServer>> {
-    Router::with_state(server)
+pub fn router() -> Router<Arc<BlazeBooruServer>> {
+    Router::new()
         .route("/login", post(login))
         .route("/logout", post(logout))
         .route("/refresh", post(refresh))
