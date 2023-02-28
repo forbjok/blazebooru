@@ -8,12 +8,12 @@ edition = "2021"
 [dependencies]
 blazebooru_common = { path = "../common" }
 blazebooru_models = { path = "../models" }
-anyhow = "1.0.66"
+anyhow = "1.0.69"
 chrono = "0.4.23"
-serde = "1.0.147"
-serde_derive = "1.0.147"
+serde = "1.0.152"
+serde_derive = "1.0.152"
 sqlx = { version = "0.6.2", features = ["chrono", "ipnetwork", "offline", "postgres", "runtime-tokio-rustls", "uuid"] }
-thiserror = "1.0.37"
-tokio = "1.22.0"
+thiserror = "1.0.38"
+tokio = "1.25.0"
 tracing = "0.1.37"
-uuid = "1.2.2"
+uuid = "1.3.0"

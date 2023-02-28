@@ -8,6 +8,7 @@ use axum::response::IntoResponse;
 use axum::Router;
 use futures::Future;
 use thiserror::Error;
+use tower_http::services::ServeDir;
 use tracing::{error, info};
 
 use blazebooru_core::BlazeBooruCore;
@@ -47,7 +48,7 @@ impl BlazeBooruServer {
         // On a production deployment, the public file path should
         // be served directly through a dedicated HTTP server instead.
         if server.serve_files {
-            app = app.merge(axum_extra::routing::SpaRouter::new("/f", &server.core.public_path));
+            app = app.nest_service("/f", ServeDir::new(&server.core.public_path))
         }
 
         let app = app
