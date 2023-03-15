@@ -4,9 +4,11 @@ use std::{env, fs};
 use anyhow::Context;
 
 use blazebooru_store::PgStore;
+use config::BlazeBooruConfig;
 
 mod auth;
 mod comment;
+pub mod config;
 pub mod image;
 mod post;
 mod tag;
@@ -21,10 +23,11 @@ pub struct BlazeBooruCore {
 }
 
 impl BlazeBooruCore {
-    pub fn new() -> Result<Self, anyhow::Error> {
+    pub fn new(config: &BlazeBooruConfig) -> Result<Self, anyhow::Error> {
         let files_path = env::var("BLAZEBOORU_FILES_PATH")
             .ok()
             .map(PathBuf::from)
+            .or_else(|| config.files_path.clone())
             .expect("BLAZEBOORU_FILES_PATH not set");
 
         let temp_path = files_path.join("temp");
@@ -38,7 +41,12 @@ impl BlazeBooruCore {
         fs::create_dir_all(&public_original_path)?;
         fs::create_dir_all(&public_thumbnail_path)?;
 
-        let store = PgStore::new(&env::var("DATABASE_URL").context("DATABASE_URL not set")?)?;
+        let database_uri = env::var("DATABASE_URL")
+            .ok()
+            .or_else(|| config.database_uri.clone())
+            .context("DATABASE_URL not set")?;
+
+        let store = PgStore::new(&database_uri)?;
 
         Ok(Self {
             temp_path,

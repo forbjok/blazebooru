@@ -2,12 +2,15 @@ use std::env;
 
 use anyhow::Context;
 
-use blazebooru_core::BlazeBooruCore;
+use blazebooru_core::{config::BlazeBooruConfig, BlazeBooruCore};
 
 use crate::{auth::BlazeBooruAuth, server::BlazeBooruServer};
 
-pub async fn server(core: BlazeBooruCore, serve_files: bool) -> Result<(), anyhow::Error> {
-    let jwt_secret = env::var("BLAZEBOORU_JWT_SECRET").context("BLAZEBOORU_JWT_SECRET is not set")?;
+pub async fn server(config: BlazeBooruConfig, core: BlazeBooruCore, serve_files: bool) -> Result<(), anyhow::Error> {
+    let jwt_secret = env::var("BLAZEBOORU_JWT_SECRET")
+        .ok()
+        .or_else(|| config.jwt_secret.clone())
+        .context("BLAZEBOORU_JWT_SECRET is not set")?;
 
     let auth = BlazeBooruAuth::new(jwt_secret.as_bytes());
     let server = BlazeBooruServer {

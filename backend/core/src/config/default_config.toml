@@ -1,0 +1,4 @@
+#database-uri = 'postgres://blazebooru:blazebooru@localhost/blazebooru'
+#files-path = '/PATH/TO/BLAZEBOORU/FILES'
+
+#jwt-secret = 'sekrit'

@@ -4,7 +4,7 @@ use clap::Parser;
 use tracing::{debug, info};
 use tracing_subscriber::{EnvFilter, FmtSubscriber};
 
-use blazebooru_core::BlazeBooruCore;
+use blazebooru_core::{config::BlazeBooruConfig, BlazeBooruCore};
 
 mod auth;
 mod command;
@@ -73,7 +73,8 @@ async fn main() -> Result<(), anyhow::Error> {
 
     dotenv::dotenv().ok();
 
-    let core = BlazeBooruCore::new()?;
+    let config = BlazeBooruConfig::from_default_location()?;
+    let core = BlazeBooruCore::new(&config)?;
 
     if opt.migrate {
         info!("Running database migrations...");
@@ -83,7 +84,7 @@ async fn main() -> Result<(), anyhow::Error> {
     match opt.command {
         Command::Export { command } => command::export(core, command).await?,
         Command::Import { command } => command::import(core, command).await?,
-        Command::Server { serve_files } => command::server(core, serve_files).await?,
+        Command::Server { serve_files } => command::server(config, core, serve_files).await?,
     };
 
     Ok(())
