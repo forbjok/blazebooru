@@ -7,6 +7,7 @@ import { useAuthStore } from "./auth";
 
 import type { PageInfo, Post, PostInfo, UpdatePost } from "@/models/api/post";
 import { DEFAULT_SETTINGS, type Settings } from "@/models/settings";
+import type { SysConfig } from "@/models/api/sys";
 
 export interface Search {
   tags: string[];
@@ -27,6 +28,7 @@ export const useMainStore = defineStore("main", () => {
   const activeSearch = ref<Search>(EMPTY_SEARCH);
 
   let calculatedPages: Record<number, PageInfo> = {};
+  const sysConfig = ref<SysConfig>();
   const lastPage = ref<PageInfo>();
   const currentPage = ref(-1);
   const currentPosts = ref<Post[]>([]);
@@ -47,6 +49,16 @@ export const useMainStore = defineStore("main", () => {
 
     return tags;
   });
+
+  async function getSysConfig() {
+    if (!sysConfig.value) {
+      const res = await axios.get<SysConfig>("/api/sys/config");
+
+      sysConfig.value = res.data;
+    }
+
+    return sysConfig.value;
+  }
 
   function getPageNumbers(max_pages: number) {
     const half_max_pages = max_pages / 2;
@@ -297,6 +309,7 @@ export const useMainStore = defineStore("main", () => {
     currentPosts,
     currentTags,
     settings,
+    getSysConfig,
     getPageNumbers,
     clearSearch,
     getPost,

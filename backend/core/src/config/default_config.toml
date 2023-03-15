@@ -2,3 +2,5 @@
 #files-path = '/PATH/TO/BLAZEBOORU/FILES'
 
 #jwt-secret = 'sekrit'
+
+#max-image-size = 10_000_000

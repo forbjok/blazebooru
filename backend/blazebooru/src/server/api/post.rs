@@ -12,6 +12,7 @@ use axum::Json;
 use axum::Router;
 use serde::Deserialize;
 
+use blazebooru_core::config::BlazeBooruConfig;
 use blazebooru_models::local as lm;
 use blazebooru_models::local::HashedFile;
 use blazebooru_models::view as vm;
@@ -20,7 +21,7 @@ use crate::server::api::Authorized;
 use crate::server::ApiError;
 use crate::server::BlazeBooruServer;
 
-const MAX_IMAGE_SIZE: usize = 10_000_000; // 10MB
+use super::DEFAULT_MAX_IMAGE_SIZE;
 
 #[derive(Deserialize)]
 struct CalculatePagesQuery {
@@ -68,7 +69,7 @@ struct PostSearchQuery {
     exclude_tags: Vec<String>,
 }
 
-pub fn router() -> Router<Arc<BlazeBooruServer>> {
+pub fn router(config: &BlazeBooruConfig) -> Router<Arc<BlazeBooruServer>> {
     Router::new()
         .route("/", get(get_view_posts))
         .route("/:id", get(get_view_post).delete(delete_post))
@@ -79,7 +80,9 @@ pub fn router() -> Router<Arc<BlazeBooruServer>> {
         .route("/pages/last", get(calculate_last_page))
         .route(
             "/upload",
-            post(upload_post.layer(DefaultBodyLimit::max(MAX_IMAGE_SIZE))),
+            post(upload_post.layer(DefaultBodyLimit::max(
+                config.max_image_size.unwrap_or(DEFAULT_MAX_IMAGE_SIZE),
+            ))),
         )
 }
 

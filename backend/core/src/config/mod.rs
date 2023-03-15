@@ -22,6 +22,8 @@ pub struct BlazeBooruConfig {
     pub database_uri: Option<String>,
 
     pub jwt_secret: Option<String>,
+
+    pub max_image_size: Option<usize>,
 }
 
 impl BlazeBooruConfig {

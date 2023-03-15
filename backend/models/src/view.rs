@@ -75,3 +75,8 @@ pub struct PageInfo {
     pub no: i32,
     pub start_id: i32,
 }
+
+#[derive(Debug, Serialize)]
+pub struct Config {
+    pub max_image_size: usize,
+}

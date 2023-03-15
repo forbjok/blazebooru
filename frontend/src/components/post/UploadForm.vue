@@ -1,10 +1,15 @@
 <script setup lang="ts">
-import { computed, reactive, ref, toRefs } from "vue";
+import { computed, onMounted, reactive, ref, toRefs } from "vue";
 import { filesize } from "filesize";
 
 import TagsEditor from "@/components/tag/TagsEditor.vue";
 
 import type { PostInfo } from "@/models/api/post";
+
+import { useMainStore } from "@/stores/main";
+import type { SysConfig } from "@/models/api/sys";
+
+const mainStore = useMainStore();
 
 interface Props {
   disabled?: boolean;
@@ -17,8 +22,6 @@ interface ViewModel {
   tags: string[];
   file?: File;
 }
-
-const MAX_IMAGE_SIZE = 10_000_000;
 
 const props = withDefaults(defineProps<Props>(), {
   disabled: false,
@@ -39,6 +42,14 @@ const vm = reactive<ViewModel>({
   tags: [],
 });
 
+const sysConfig = ref<SysConfig>();
+
+const maxImageSizeText = computed(() => filesize(sysConfig.value?.max_image_size || 0));
+
+onMounted(async () => {
+  sysConfig.value = await mainStore.getSysConfig();
+});
+
 const previewImage = computed(() => {
   if (!vm.file) {
     return;
@@ -53,8 +64,9 @@ const fileSelected = (event: Event) => {
 
   const file = input.files[0];
 
-  if (file && file.size > MAX_IMAGE_SIZE) {
-    alert(`The selected file is bigger than the maximum allowed size of ${filesize(MAX_IMAGE_SIZE)}`);
+  const maxImageSize = sysConfig.value?.max_image_size || 0;
+  if (file && file.size > maxImageSize) {
+    alert(`The selected file is bigger than the maximum allowed size of ${filesize(maxImageSize)}`);
     return;
   }
 
@@ -118,6 +130,7 @@ const upload = () => {
     ></textarea>
 
     <input name="file" type="file" accept="image/*" @change="fileSelected" :disabled="disabled" required />
+    <p>Max file size: {{ maxImageSizeText }}</p>
 
     <input :disabled="!canSubmit" class="submit-button" type="submit" value="Upload" />
   </form>

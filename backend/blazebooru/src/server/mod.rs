@@ -11,11 +11,12 @@ use thiserror::Error;
 use tower_http::services::ServeDir;
 use tracing::{error, info};
 
-use blazebooru_core::BlazeBooruCore;
+use blazebooru_core::{config::BlazeBooruConfig, BlazeBooruCore};
 
 use crate::auth::{AuthError, BlazeBooruAuth};
 
 pub struct BlazeBooruServer {
+    pub config: BlazeBooruConfig,
     pub auth: BlazeBooruAuth,
     pub core: BlazeBooruCore,
     pub serve_files: bool,
@@ -37,9 +38,9 @@ enum ApiError {
 
 impl BlazeBooruServer {
     pub async fn run_server(self, shutdown: impl Future<Output = ()>) -> Result<(), anyhow::Error> {
-        let server = Arc::new(self);
+        let api = api::router(&self.config);
 
-        let api = api::router();
+        let server = Arc::new(self);
 
         let mut app = Router::new().nest("/api", api);
 

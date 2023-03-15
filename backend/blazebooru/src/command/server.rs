@@ -13,7 +13,9 @@ pub async fn server(config: BlazeBooruConfig, core: BlazeBooruCore, serve_files:
         .context("BLAZEBOORU_JWT_SECRET is not set")?;
 
     let auth = BlazeBooruAuth::new(jwt_secret.as_bytes());
+
     let server = BlazeBooruServer {
+        config,
         auth,
         core,
         serve_files,

@@ -1,5 +1,6 @@
 mod auth;
 mod post;
+mod sys;
 mod tag;
 mod user;
 
@@ -14,10 +15,14 @@ use axum::{
     Router, TypedHeader,
 };
 
+use blazebooru_core::config::BlazeBooruConfig;
+
 use crate::{
     auth::{AuthClaims, AuthError, SessionClaims},
     server::BlazeBooruServer,
 };
+
+const DEFAULT_MAX_IMAGE_SIZE: usize = 10_000_000; // 10MB
 
 #[derive(Debug)]
 struct Authorized {
@@ -25,14 +30,16 @@ struct Authorized {
     claims: AuthClaims,
 }
 
-pub fn router() -> Router<Arc<BlazeBooruServer>> {
+pub fn router(config: &BlazeBooruConfig) -> Router<Arc<BlazeBooruServer>> {
     let auth = auth::router();
-    let post = post::router();
+    let post = post::router(config);
+    let sys = sys::router();
     let user = user::router();
     let tag = tag::router();
 
     Router::new()
         .nest("/auth", auth)
+        .nest("/sys", sys)
         .nest("/post", post)
         .nest("/user", user)
         .nest("/tag", tag)
