@@ -12,7 +12,7 @@ use blazebooru_store::models as dbm;
 
 use super::BlazeBooruCore;
 
-static RE_VALID_USERNAME: Lazy<Regex> = Lazy::new(|| Regex::new(r#"^[\d\w_]+$"#).unwrap());
+static RE_VALID_USERNAME: Lazy<Regex> = Lazy::new(|| Regex::new(r"^[\d\w_]+$").unwrap());
 
 impl BlazeBooruCore {
     pub async fn create_user(&self, user: lm::NewUser<'_>) -> Result<i32, anyhow::Error> {
