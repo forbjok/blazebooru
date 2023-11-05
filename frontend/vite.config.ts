@@ -15,6 +15,7 @@ export default defineConfig({
     proxy: {
       "/api/": {
         target: "http://localhost:3000",
+        xfwd: true,
       },
       "/f/": {
         target: "http://localhost:3000",

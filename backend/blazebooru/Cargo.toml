@@ -13,6 +13,7 @@ blazebooru_import = { path = "../import" }
 blazebooru_models = { path = "../models" }
 anyhow = "1.0.75"
 axum = { version = "0.6.20" , features = ["headers", "macros", "multipart"] }
+axum-client-ip = "0.4.2"
 chrono = "0.4.31"
 clap = { version = "4.4.7", features = ["derive"] }
 dotenv = "0.15.0"
