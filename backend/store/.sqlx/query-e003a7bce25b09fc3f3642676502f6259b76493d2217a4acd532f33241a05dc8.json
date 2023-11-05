@@ -1,0 +1,48 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT * FROM unnest(calculate_pages($1, $2, $3, $4, $5));",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "no",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "start_id",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "TextArray",
+        "TextArray",
+        "Int4",
+        "Int4",
+        {
+          "Custom": {
+            "name": "page_info",
+            "kind": {
+              "Composite": [
+                [
+                  "no",
+                  "Int4"
+                ],
+                [
+                  "start_id",
+                  "Int4"
+                ]
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "nullable": [
+      null,
+      null
+    ]
+  },
+  "hash": "e003a7bce25b09fc3f3642676502f6259b76493d2217a4acd532f33241a05dc8"
+}

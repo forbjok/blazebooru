@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT * FROM invalidate_session($1);",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "invalidate_session",
+        "type_info": "Void"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "8fd00403c860ceadbab3e7d2b6bbf9a3d925f3663bc1644bfd27b7732b6ac639"
+}

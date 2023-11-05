@@ -1,0 +1,44 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT update_tag($1, $2, $3);",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "update_tag",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4",
+        {
+          "Custom": {
+            "name": "update_tag",
+            "kind": {
+              "Composite": [
+                [
+                  "alias_of_tag",
+                  "Text"
+                ],
+                [
+                  "add_implied_tags",
+                  "TextArray"
+                ],
+                [
+                  "remove_implied_tags",
+                  "TextArray"
+                ]
+              ]
+            }
+          }
+        },
+        "Int4"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "a91f7f9abafc343cae066a9dc9b9f9a1e09387b3847fdd0c21fe3acf5157ff07"
+}
