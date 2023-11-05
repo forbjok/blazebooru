@@ -9,20 +9,20 @@ edition = "2021"
 blazebooru_common = { path = "../common" }
 blazebooru_models = { path = "../models" }
 blazebooru_store = { path = "../store" }
-anyhow = "1.0.69"
-argon2 = "0.4.1"
-bytes = "1.4.0"
-chrono = "0.4.23"
-dirs = "4.0.0"
-futures-core = "0.3.26"
-futures-util = "0.3.26"
-image = { version = "0.24.5", features = ["webp-encoder"] }
-once_cell = "1.17.1"
-regex = "1.7.1"
-serde = "1.0.152"
-serde_derive = "1.0.152"
-serde_json = "1.0.93"
-tokio = "1.25.0"
-toml = "0.7.3"
-tracing = "0.1.37"
-uuid = { version = "1.3.0", features = ["v4"] }
+anyhow = "1.0.75"
+argon2 = "0.5.2"
+bytes = "1.5.0"
+chrono = "0.4.31"
+dirs = "5.0.1"
+futures-core = "0.3.29"
+futures-util = "0.3.29"
+image = { version = "0.24.7", features = ["webp-encoder"] }
+once_cell = "1.18.0"
+regex = "1.10.2"
+serde = "1.0.190"
+serde_derive = "1.0.190"
+serde_json = "1.0.108"
+tokio = "1.33.0"
+toml = "0.8.6"
+tracing = "0.1.40"
+uuid = { version = "1.5.0", features = ["v4"] }
