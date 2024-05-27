@@ -11,20 +11,20 @@ blazebooru_core = { path = "../core" }
 blazebooru_export = { path = "../export" }
 blazebooru_import = { path = "../import" }
 blazebooru_models = { path = "../models" }
-anyhow = "1.0.75"
-axum = { version = "0.6.20" , features = ["headers", "macros", "multipart"] }
-axum-client-ip = "0.4.2"
-chrono = "0.4.31"
-clap = { version = "4.4.7", features = ["derive"] }
-dotenv = "0.15.0"
-futures = "0.3.29"
-jsonwebtoken = "9.1.0"
-serde = "1.0.190"
-serde_derive = "1.0.190"
-serde_json = "1.0.108"
-thiserror = "1.0.50"
-tokio = { version = "1.33.0", features = ["macros", "rt-multi-thread", "signal"] }
-tower-http = { version = "0.4.4", features = ["fs", "trace"] }
-tracing = "0.1.40"
-tracing-subscriber = { version = "0.3.17", features = ["env-filter"] }
-uuid = { version = "1.5.0", features = ["serde"] }
+anyhow = { workspace = true }
+axum = { workspace = true, features = ["headers", "macros", "multipart"] }
+axum-client-ip = { workspace = true }
+chrono = { workspace = true }
+clap = { workspace = true, features = ["derive"] }
+dotenv = { workspace = true }
+futures = { workspace = true }
+jsonwebtoken = { workspace = true }
+serde = { workspace = true }
+serde_derive = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true, features = ["macros", "rt-multi-thread", "signal"] }
+tower-http = { workspace = true, features = ["fs", "trace"] }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true, features = ["env-filter"] }
+uuid = { workspace = true, features = ["serde"] }
