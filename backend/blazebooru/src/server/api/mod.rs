@@ -9,12 +9,15 @@ use std::sync::Arc;
 use axum::{
     async_trait,
     extract::FromRequestParts,
-    headers::{authorization::Bearer, Authorization},
     http::{request::Parts, StatusCode},
     response::{IntoResponse, Response},
-    Router, TypedHeader,
+    Router,
 };
 
+use axum_extra::{
+    headers::{authorization::Bearer, Authorization},
+    TypedHeader,
+};
 use blazebooru_core::config::BlazeBooruConfig;
 
 use crate::{

@@ -16,7 +16,7 @@ chrono = { workspace = true }
 dirs = { workspace = true }
 futures-core = { workspace = true }
 futures-util = { workspace = true }
-image = { workspace = true, features = ["webp-encoder"] }
+image = { workspace = true, features = ["webp"] }
 once_cell = { workspace = true }
 regex = { workspace = true }
 serde = { workspace = true }

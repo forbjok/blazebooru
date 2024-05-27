@@ -1,6 +1,6 @@
 mod api;
 
-use std::sync::Arc;
+use std::{net::SocketAddr, sync::Arc};
 
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
@@ -8,6 +8,7 @@ use axum::Router;
 use axum_client_ip::SecureClientIpSource;
 use futures::Future;
 use thiserror::Error;
+use tokio::net::TcpListener;
 use tower_http::services::ServeDir;
 use tracing::{error, info};
 
@@ -37,7 +38,7 @@ enum ApiError {
 }
 
 impl BlazeBooruServer {
-    pub async fn run_server(self, shutdown: impl Future<Output = ()>) -> Result<(), anyhow::Error> {
+    pub async fn run_server(self, shutdown: impl Future<Output = ()> + Send + 'static) -> Result<(), anyhow::Error> {
         let api = api::router(&self.config);
 
         let server = Arc::new(self);
@@ -57,13 +58,11 @@ impl BlazeBooruServer {
             .layer(SecureClientIpSource::RightmostXForwardedFor.into_extension())
             .with_state(server);
 
-        let addr = "[::]:3000".parse().unwrap();
+        let addr: SocketAddr = "[::]:3000".parse().unwrap();
 
         info!("Web server listening on: {addr}");
-        axum::Server::bind(&addr)
-            .serve(app.into_make_service())
-            .with_graceful_shutdown(shutdown)
-            .await?;
+        let listener = TcpListener::bind(&addr).await?;
+        axum::serve(listener, app).with_graceful_shutdown(shutdown).await?;
 
         Ok(())
     }

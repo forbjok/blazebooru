@@ -12,8 +12,9 @@ blazebooru_export = { path = "../export" }
 blazebooru_import = { path = "../import" }
 blazebooru_models = { path = "../models" }
 anyhow = { workspace = true }
-axum = { workspace = true, features = ["headers", "macros", "multipart"] }
+axum = { workspace = true, features = ["macros", "multipart"] }
 axum-client-ip = { workspace = true }
+axum-extra = { workspace = true, features = ["typed-header"] }
 chrono = { workspace = true }
 clap = { workspace = true, features = ["derive"] }
 dotenv = { workspace = true }
