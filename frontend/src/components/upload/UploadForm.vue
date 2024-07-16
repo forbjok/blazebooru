@@ -7,39 +7,36 @@ import TagsEditor from "@/components/tag/TagsEditor.vue";
 import type { PostInfo } from "@/models/api/post";
 
 import { useMainStore } from "@/stores/main";
+import type { UploadPost } from "@/stores/upload";
+
 import type { SysConfig } from "@/models/api/sys";
 
 const mainStore = useMainStore();
 
-interface Props {
-  disabled?: boolean;
-}
-
-interface ViewModel {
+interface PostViewModel {
   title: string;
   description: string;
   source: string;
   tags: string[];
-  file?: File;
+  file: File;
+  previewUrl: string;
+  progress: number;
 }
 
-const props = withDefaults(defineProps<Props>(), {
-  disabled: false,
-});
+interface ViewModel {
+  tags: string[];
+  posts: PostViewModel[];
+}
 
 const emit = defineEmits<{
-  (e: "upload", info: PostInfo, file: File): void;
+  (e: "upload", posts: UploadPost[]): void;
 }>();
-
-const { disabled } = toRefs(props);
 
 const tagsEditor = ref<typeof TagsEditor>();
 
 const vm = reactive<ViewModel>({
-  title: "",
-  description: "",
-  source: "",
   tags: [],
+  posts: [],
 });
 
 const sysConfig = ref<SysConfig>();
@@ -50,95 +47,105 @@ onMounted(async () => {
   sysConfig.value = await mainStore.getSysConfig();
 });
 
-const previewImage = computed(() => {
-  if (!vm.file) {
-    return;
-  }
-
-  return URL.createObjectURL(vm.file);
-});
-
 const fileSelected = (event: Event) => {
   const input = event.target as HTMLInputElement;
   if (!input || !input.files) return;
 
-  const file = input.files[0];
-
   const maxImageSize = sysConfig.value?.max_image_size || 0;
-  if (file && file.size > maxImageSize) {
-    alert(`The selected file is bigger than the maximum allowed size of ${filesize(maxImageSize)}`);
-    return;
+
+  for (const file of input.files) {
+    if (file && file.size > maxImageSize) {
+      alert(
+        `The selected file '${file.name}' is bigger than the maximum allowed size of ${filesize(maxImageSize)} and will be ignored.`,
+      );
+      continue;
+    }
+
+    const new_post: PostViewModel = {
+      title: "",
+      description: "",
+      source: "",
+      tags: [],
+      file,
+      previewUrl: URL.createObjectURL(file),
+      progress: 0,
+    };
+
+    vm.posts.push(new_post);
   }
 
-  vm.file = file;
+  input.value = "";
 };
 
 const canSubmit = computed(() => {
-  if (disabled.value) {
-    return false;
-  }
-
-  return !!vm.file;
+  return vm.posts.length > 0;
 });
 
 const upload = () => {
-  if (!vm.file) {
-    return;
+  const uploadPosts: UploadPost[] = [];
+
+  for (const p of vm.posts) {
+    let info: PostInfo = {
+      title: p.title,
+      description: p.description,
+      source: p.source,
+      tags: [...vm.tags, ...p.tags],
+    };
+
+    uploadPosts.push({ info, file: p.file });
   }
 
-  // Force submit the tag entry
-  tagsEditor.value?.submit();
+  emit("upload", uploadPosts);
 
-  let info: PostInfo = {
-    tags: vm.tags,
-  };
-
-  if (vm.title) {
-    info.title = vm.title;
-  }
-
-  if (vm.description) {
-    info.description = vm.description;
-  }
-
-  if (vm.source) {
-    info.source = vm.source;
-  }
-
-  emit("upload", info, vm.file);
+  vm.posts = [];
 };
 </script>
 
 <template>
   <form class="upload-form" @submit.prevent="upload">
-    <label>Title</label>
-    <input name="title" type="text" v-model="vm.title" placeholder="Title" title="Title" :disabled="disabled" />
-    <label>Source</label>
-    <input name="source" type="text" v-model="vm.source" placeholder="Source" title="Source" :disabled="disabled" />
-
-    <label>Tags</label>
+    <label>Common tags</label>
     <TagsEditor ref="tagsEditor" v-model="vm.tags" />
 
-    <label>Description</label>
-    <textarea
-      :readonly="disabled"
-      class="description-field"
-      name="description"
-      v-model="vm.description"
-      placeholder="Description"
-      wrap="soft"
-    ></textarea>
-
-    <input name="file" type="file" accept="image/*" @change="fileSelected" :disabled="disabled" required />
+    <input name="file" type="file" accept="image/*" @change="fileSelected" multiple="true" />
     <p>Max file size: {{ maxImageSizeText }}</p>
+
+    <table class="posts-table">
+      <tr>
+        <th>Preview</th>
+        <th>Info</th>
+      </tr>
+      <tr v-for="p in vm.posts">
+        <td>
+          <div class="image-preview"><img :src="p.previewUrl" :alt="p.file.name" /></div>
+        </td>
+        <td>
+          <div class="post-info">
+            <label>Filename: {{ p.file.name }}</label>
+
+            <label class="post-title">Title</label>
+            <input name="title" type="text" v-model="p.title" placeholder="Title" title="Title" />
+
+            <label>Description</label>
+            <textarea
+              class="description-field"
+              name="description"
+              v-model="p.description"
+              placeholder="Description"
+              wrap="soft"
+            ></textarea>
+
+            <label>Source</label>
+            <input name="source" type="text" v-model="p.source" placeholder="Source" title="Source" />
+
+            <label>Tags</label>
+            <TagsEditor v-model="p.tags" />
+          </div>
+        </td>
+      </tr>
+    </table>
 
     <input :disabled="!canSubmit" class="submit-button" type="submit" value="Upload" />
   </form>
-
-  <div v-show="previewImage" class="image-preview">
-    <label>Image preview:</label>
-    <img :src="previewImage" alt="Preview" />
-  </div>
 </template>
 
 <style scoped lang="scss">
@@ -153,7 +160,7 @@ const upload = () => {
   resize: both;
 
   width: 30rem;
-  height: 10rem;
+  height: 4rem;
 
   max-width: 100%;
 }
@@ -165,15 +172,44 @@ const upload = () => {
 .image-preview {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
 
-  margin-top: 3rem;
-
-  max-width: 100%;
+  max-width: 16rem;
 
   img {
     background-color: var(--color-post-background);
-    padding: 1rem;
+    margin-top: 0.1rem;
+  }
+}
+
+.posts-table {
+  border-collapse: collapse;
+
+  th {
+    background-color: var(--color-list-header-background);
+    padding: 0.2rem;
+  }
+
+  tr {
+    background-color: var(--color-list-background);
+
+    &:nth-child(odd) {
+      background-color: var(--color-list-alt-background);
+    }
+  }
+
+  td {
+    overflow: hidden;
+    vertical-align: top;
+  }
+}
+
+.post-info {
+  display: flex;
+  flex-direction: column;
+  padding: 0.4rem;
+
+  .post-title {
+    margin-top: 0.4rem;
   }
 }
 </style>

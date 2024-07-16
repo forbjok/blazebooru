@@ -1,31 +1,17 @@
 <script setup lang="ts">
-import { ref } from "vue";
-
-import { useRouter } from "vue-router";
-
 import MainLayout from "@/components/MainLayout.vue";
 import UploadForm from "@/components/upload/UploadForm.vue";
 
 import { useMainStore } from "@/stores/main";
-import { useUploadStore } from "@/stores/upload";
-
-import type { PostInfo } from "@/models/api/post";
+import { useUploadStore, type UploadPost } from "@/stores/upload";
 
 const mainStore = useMainStore();
 const uploadStore = useUploadStore();
 
-const router = useRouter();
-
-const uploading = ref(false);
-
-const upload = async (info: PostInfo, file: File) => {
-  uploading.value = true;
-
-  uploadStore.queue({ info, file });
+const upload = async (posts: UploadPost[]) => {
+  posts.forEach((p) => uploadStore.queue(p));
   await uploadStore.processUploadQueue();
-
   await mainStore.refresh();
-  router.push({ name: "browse" });
 };
 </script>
 
@@ -34,7 +20,7 @@ const upload = async (info: PostInfo, file: File) => {
     <MainLayout>
       <div class="content">
         <div class="title">Upload</div>
-        <UploadForm :disabled="uploading" @upload="upload" />
+        <UploadForm @upload="upload" />
       </div>
     </MainLayout>
   </main>

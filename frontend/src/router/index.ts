@@ -5,7 +5,6 @@ import RegisterView from "@/views/RegisterView.vue";
 import PostView from "@/views/PostView.vue";
 import BrowseView from "@/views/BrowseView.vue";
 import UploadView from "@/views/UploadView.vue";
-import UploadMultipleView from "@/views/UploadMultipleView.vue";
 import TagsView from "@/views/TagsView.vue";
 import UploadProgressView from "@/views/UploadProgressView.vue";
 
@@ -56,11 +55,6 @@ const router = createRouter({
       path: "/upload",
       name: "upload",
       component: UploadView,
-    },
-    {
-      path: "/multiupload",
-      name: "multiupload",
-      component: UploadMultipleView,
     },
     {
       path: "/upload-progress",

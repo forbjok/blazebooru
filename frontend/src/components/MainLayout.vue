@@ -28,8 +28,7 @@ const logout = async () => {
       <span class="nav">
         <span class="browse"> [ <router-link :to="{ name: 'browse' }">Browse</router-link> ] </span>
         <span v-if="authStore.isAuthorized" class="upload">
-          [ <router-link :to="{ name: 'upload' }">Upload</router-link> ] [
-          <router-link :to="{ name: 'multiupload' }">Multi-Upload</router-link> ]
+          [ <router-link :to="{ name: 'upload' }">Upload</router-link> ]
         </span>
         <span v-if="uploadStore.isUploading" class="upload-status">
           [ <router-link :to="{ name: 'upload-progress' }">UPLOADING...</router-link> ]
