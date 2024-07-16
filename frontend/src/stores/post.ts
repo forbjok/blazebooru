@@ -13,7 +13,10 @@ export const usePostStore = defineStore("post", () => {
   const newComment = ref("");
 
   async function getPostComments(post_id: number) {
-    const res = await axios.get<Comment[]>(`/api/post/${post_id}/comments`);
+    const res = await axios.get<Comment[]>(`/api/post/${post_id}/comments`, {
+      headers: await authStore.getAuthHeaders(),
+    });
+
     return res.data;
   }
 

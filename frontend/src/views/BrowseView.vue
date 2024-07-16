@@ -1,17 +1,19 @@
 <script setup lang="ts">
 import { nextTick, onMounted, ref, watch } from "vue";
+import { onBeforeRouteUpdate, useRoute, useRouter, type LocationQueryValue } from "vue-router";
 
 import MainLayout from "@/components/MainLayout.vue";
 import Posts from "@/components/post/Posts.vue";
 import SearchForm from "@/components/post/SearchForm.vue";
 
+import { useAuthStore } from "@/stores/auth";
 import { useMainStore, type Search } from "@/stores/main";
-import { onBeforeRouteUpdate, useRoute, useRouter, type LocationQueryValue } from "vue-router";
 import PoweredBy from "../components/about/PoweredBy.vue";
 
 const route = useRoute();
 const router = useRouter();
 
+const authStore = useAuthStore();
 const mainStore = useMainStore();
 
 const searchForm = ref<typeof SearchForm>();
@@ -25,7 +27,7 @@ watch(
   (v) => {
     mainStore.searchPosts(v);
   },
-  { deep: true }
+  { deep: true },
 );
 
 onBeforeRouteUpdate(async (to) => {
@@ -39,6 +41,12 @@ onBeforeRouteUpdate(async (to) => {
 });
 
 onMounted(async () => {
+  const sysConfig = await mainStore.getSysConfig();
+  if (sysConfig.require_login && !authStore.isAuthorized) {
+    router.replace({ name: "login" });
+    return;
+  }
+
   await mainStore.initializePosts();
   const page = parseInt((route.query.p as LocationQueryValue) || "");
   if (page) {

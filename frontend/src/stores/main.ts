@@ -91,7 +91,10 @@ export const useMainStore = defineStore("main", () => {
   }
 
   async function getPost(id: number) {
-    const res = await axios.get<Post>(`/api/post/${id}`);
+    const res = await axios.get<Post>(`/api/post/${id}`, {
+      headers: await authStore.getAuthHeaders(),
+    });
+
     const post = res.data;
 
     const existingIndex = currentPosts.value.findIndex((p) => p.id === id);
@@ -113,6 +116,7 @@ export const useMainStore = defineStore("main", () => {
         sid: start_id,
         limit: POSTS_PER_PAGE,
       },
+      headers: await authStore.getAuthHeaders(),
     });
 
     return res.data;
@@ -215,7 +219,7 @@ export const useMainStore = defineStore("main", () => {
 
   function findNearestPage(page: number) {
     const nearestPages = (Object.values(calculatedPages) as unknown as PageInfo[]).sort(
-      (a, b) => Math.abs(page - a.no) - Math.abs(page - b.no)
+      (a, b) => Math.abs(page - a.no) - Math.abs(page - b.no),
     );
 
     const nearestPage = nearestPages[0];

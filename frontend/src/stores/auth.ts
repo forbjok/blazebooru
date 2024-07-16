@@ -29,6 +29,10 @@ export const useAuthStore = defineStore("auth", () => {
   }
 
   async function getAuthHeaders() {
+    if (!isAuthorized.value) {
+      return {};
+    }
+
     const accessToken = await getAccessToken();
 
     return {

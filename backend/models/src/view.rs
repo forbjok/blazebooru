@@ -79,4 +79,5 @@ pub struct PageInfo {
 #[derive(Debug, Serialize)]
 pub struct Config {
     pub max_image_size: usize,
+    pub require_login: bool,
 }

@@ -42,7 +42,12 @@ const file_url = computed(() => {
 });
 
 onMounted(async () => {
-  await fetchPost();
+  try {
+    await fetchPost();
+  } catch {
+    router.replace({ name: "browse", query: { p: mainStore.currentPage } });
+    return;
+  }
 });
 
 const fetchPost = async () => {

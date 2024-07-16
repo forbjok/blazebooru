@@ -48,8 +48,8 @@ export default defineComponent({
                 ctx.emit("clickquotelink", parseInt(text.substring(2)));
               },
             },
-            text
-          )
+            text,
+          ),
         );
       };
 

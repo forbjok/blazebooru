@@ -25,8 +25,6 @@ use crate::{
     server::BlazeBooruServer,
 };
 
-const DEFAULT_MAX_IMAGE_SIZE: usize = 10_000_000; // 10MB
-
 #[derive(Debug)]
 struct Authorized {
     session: i64,

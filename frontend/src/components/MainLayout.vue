@@ -1,10 +1,22 @@
 <script setup lang="ts">
+import { useRouter } from "vue-router";
+
 import { useAuthStore } from "@/stores/auth";
+import { useMainStore } from "@/stores/main";
+
+const router = useRouter();
 
 const authStore = useAuthStore();
+const mainStore = useMainStore();
 
 const logout = async () => {
   await authStore.logout();
+
+  const sysConfig = await mainStore.getSysConfig();
+  if (sysConfig.require_login) {
+    router.replace({ name: "login" });
+    return;
+  }
 };
 </script>
 

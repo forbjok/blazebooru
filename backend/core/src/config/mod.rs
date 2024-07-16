@@ -15,6 +15,18 @@ pub const CONFIG_FILENAME: &str = "config.toml";
 
 pub const DEFAULT_CONFIG: &str = include_str!("default_config.toml");
 
+const DEFAULT_MAX_IMAGE_SIZE: usize = 10_000_000; // 10MB
+const DEFAULT_REQUIRE_LOGIN: bool = false;
+
+// Workaround for serde not supporting specifying default values directly
+fn default_max_image_size() -> usize {
+    DEFAULT_MAX_IMAGE_SIZE
+}
+
+fn default_require_login() -> bool {
+    DEFAULT_REQUIRE_LOGIN
+}
+
 #[derive(Debug, Default, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct BlazeBooruConfig {
@@ -23,7 +35,11 @@ pub struct BlazeBooruConfig {
 
     pub jwt_secret: Option<String>,
 
-    pub max_image_size: Option<usize>,
+    #[serde(default = "default_max_image_size")]
+    pub max_image_size: usize,
+
+    #[serde(default = "default_require_login")]
+    pub require_login: bool,
 }
 
 impl BlazeBooruConfig {

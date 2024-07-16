@@ -21,8 +21,6 @@ use crate::server::api::Authorized;
 use crate::server::ApiError;
 use crate::server::BlazeBooruServer;
 
-use super::DEFAULT_MAX_IMAGE_SIZE;
-
 #[derive(Deserialize)]
 struct CalculatePagesQuery {
     #[serde(rename = "pc")]
@@ -80,17 +78,20 @@ pub fn router(config: &BlazeBooruConfig) -> Router<Arc<BlazeBooruServer>> {
         .route("/pages/last", get(calculate_last_page))
         .route(
             "/upload",
-            post(upload_post.layer(DefaultBodyLimit::max(
-                config.max_image_size.unwrap_or(DEFAULT_MAX_IMAGE_SIZE),
-            ))),
+            post(upload_post.layer(DefaultBodyLimit::max(config.max_image_size))),
         )
 }
 
 #[axum::debug_handler(state = Arc<BlazeBooruServer>)]
 async fn get_view_post(
     State(server): State<Arc<BlazeBooruServer>>,
+    auth: Option<Authorized>,
     Path(id): Path<i32>,
 ) -> Result<Json<vm::Post>, ApiError> {
+    if server.config.require_login && auth.is_none() {
+        return Err(ApiError::Unauthorized);
+    }
+
     let post = server.core.get_view_post(id).await.context("Error getting view post")?;
 
     Ok(Json(post.ok_or(ApiError::NotFound)?))
@@ -138,12 +139,17 @@ async fn delete_post(
 #[axum::debug_handler(state = Arc<BlazeBooruServer>)]
 async fn get_view_posts(
     State(server): State<Arc<BlazeBooruServer>>,
+    auth: Option<Authorized>,
     Query(PostSearchQuery {
         include_tags,
         exclude_tags,
     }): Query<PostSearchQuery>,
     Query(PaginatedQuery { start_id, limit }): Query<PaginatedQuery>,
 ) -> Result<Json<Vec<vm::Post>>, ApiError> {
+    if server.config.require_login && auth.is_none() {
+        return Err(ApiError::Unauthorized);
+    }
+
     let posts = server
         .core
         .get_view_posts(include_tags, exclude_tags, start_id, limit)
