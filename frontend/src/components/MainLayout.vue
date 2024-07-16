@@ -3,11 +3,13 @@ import { useRouter } from "vue-router";
 
 import { useAuthStore } from "@/stores/auth";
 import { useMainStore } from "@/stores/main";
+import { useUploadStore } from "@/stores/upload";
 
 const router = useRouter();
 
 const authStore = useAuthStore();
 const mainStore = useMainStore();
+const uploadStore = useUploadStore();
 
 const logout = async () => {
   await authStore.logout();
@@ -26,7 +28,11 @@ const logout = async () => {
       <span class="nav">
         <span class="browse"> [ <router-link :to="{ name: 'browse' }">Browse</router-link> ] </span>
         <span v-if="authStore.isAuthorized" class="upload">
-          [ <router-link :to="{ name: 'upload' }">Upload</router-link> ]
+          [ <router-link :to="{ name: 'upload' }">Upload</router-link> ] [
+          <router-link :to="{ name: 'multiupload' }">Multi-Upload</router-link> ]
+        </span>
+        <span v-if="uploadStore.isUploading" class="upload-status">
+          [ <router-link :to="{ name: 'upload-progress' }">UPLOADING...</router-link> ]
         </span>
         <span v-if="authStore.isAdmin" class="tags admin">
           [ <router-link :to="{ name: 'tags' }">Tags</router-link> ]

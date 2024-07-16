@@ -166,26 +166,6 @@ export const useMainStore = defineStore("main", () => {
     addCalculatedPages([res.data]);
   }
 
-  async function uploadPost(info: PostInfo, file: File) {
-    const formData = new FormData();
-
-    formData.append("info", JSON.stringify(info));
-    formData.append("file", file, file.name);
-
-    const res = await axios.post<Post>("/api/post/upload", formData, {
-      headers: await authStore.getAuthHeaders(),
-    });
-
-    if (
-      activeSearch.value.tags.every((t) => info.tags.includes(t)) &&
-      activeSearch.value.exclude_tags.every((t) => !info.tags.includes(t))
-    ) {
-      await refresh();
-    }
-
-    return res.data;
-  }
-
   async function updatePost(id: number, update_post: UpdatePost) {
     await axios.post(`/api/post/${id}/update`, update_post, {
       headers: await authStore.getAuthHeaders(),
@@ -320,8 +300,8 @@ export const useMainStore = defineStore("main", () => {
     initializePosts,
     loadPage,
     loadLastPage,
+    refresh,
     searchPosts,
-    uploadPost,
     updatePost,
     deletePost,
   };
