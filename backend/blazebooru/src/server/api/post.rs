@@ -251,9 +251,9 @@ async fn upload_post(
     if let (Some(info), Some((file, filename))) = (info, file) {
         let new_post = lm::NewPost {
             user_id: auth.claims.user_id,
-            title: info.title.map(|s| s.into()),
-            description: info.description.map(|s| s.into()),
-            source: info.source.map(|s| s.into()),
+            title: info.title.filter(|v| !v.is_empty()).map(|s| s.into()),
+            description: info.description.filter(|v| !v.is_empty()).map(|s| s.into()),
+            source: info.source.filter(|v| !v.is_empty()).map(|s| s.into()),
             filename: filename.into(),
             file,
             tags: info.tags.iter().map(|t| t.as_str()).collect(),

@@ -132,9 +132,9 @@ impl From<vm::UpdateTag> for dbm::UpdateTag {
 pub fn dbm_update_post_from_vm(id: i32, p: vm::UpdatePost) -> dbm::UpdatePost {
     dbm::UpdatePost {
         id: Some(id),
-        title: p.title,
-        description: p.description,
-        source: p.source,
+        title: p.title.filter(|v| !v.is_empty()),
+        description: p.description.filter(|v| !v.is_empty()),
+        source: p.source.filter(|v| !v.is_empty()),
         add_tags: p.add_tags,
         remove_tags: p.remove_tags,
     }
