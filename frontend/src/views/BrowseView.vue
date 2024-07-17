@@ -9,6 +9,7 @@ import SearchForm from "@/components/post/SearchForm.vue";
 import { useAuthStore } from "@/stores/auth";
 import { useMainStore, type Search } from "@/stores/main";
 import PoweredBy from "../components/about/PoweredBy.vue";
+import { onKeyDown } from "@vueuse/core";
 
 const route = useRoute();
 const router = useRouter();
@@ -58,6 +59,17 @@ onMounted(async () => {
   nextTick(() => {
     searchForm.value?.focus();
   });
+});
+
+// Override F5 to refresh the results
+// without performing a full browser refresh.
+onKeyDown("F5", async (e) => {
+  if (e.ctrlKey) {
+    return;
+  }
+
+  e.preventDefault();
+  await mainStore.refresh();
 });
 
 const includeTag = (tag: string) => {

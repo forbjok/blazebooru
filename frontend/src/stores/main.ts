@@ -238,9 +238,9 @@ export const useMainStore = defineStore("main", () => {
     return calculatedPages[page];
   }
 
-  async function loadPage(page: number) {
+  async function loadPage(page: number, force: boolean = false) {
     // We are already on this page, do nothing.
-    if (currentPage.value == page) {
+    if (!force && currentPage.value === page) {
       return;
     }
 
@@ -264,7 +264,12 @@ export const useMainStore = defineStore("main", () => {
   }
 
   async function refresh() {
-    await searchPosts(activeSearch.value);
+    lastPage.value = undefined;
+    calculatedPages = [];
+    currentPosts.value = [];
+
+    await loadPage(currentPage.value, true);
+    await calculateLastPage();
   }
 
   async function searchPosts(search: Search) {
