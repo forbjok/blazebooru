@@ -26,28 +26,61 @@ const logout = async () => {
   <div class="layout">
     <div class="header-bar">
       <span class="nav">
-        <span class="browse"> [ <router-link :to="{ name: 'browse' }">Browse</router-link> ] </span>
+        <span class="browse">
+          [
+          <router-link :to="{ name: 'browse' }">
+            <i class="fa-solid fa-eye"></i>
+            Browse
+          </router-link>
+          ]
+        </span>
         <span v-if="authStore.isAuthorized" class="upload">
-          [ <router-link :to="{ name: 'upload' }">Upload</router-link> ]
+          [ <router-link :to="{ name: 'upload' }"><i class="fa-solid fa-upload"></i> Upload</router-link> ]
         </span>
         <span v-if="uploadStore.isUploading" class="upload-status">
-          [ <router-link :to="{ name: 'upload-progress' }">UPLOADING...</router-link> ]
+          [
+          <router-link :to="{ name: 'upload-progress' }">
+            <i class="fa-solid fa-bars-progress"></i>
+            Upload in progress...
+          </router-link>
+          ]
         </span>
         <span v-if="authStore.isAdmin" class="tags admin">
           [ <router-link :to="{ name: 'tags' }">Tags</router-link> ]
         </span>
       </span>
       <span v-if="authStore.isAuthorized" class="user-authorized">
-        <span class="username" :class="{ admin: authStore.isAdmin }"
-          ><span v-if="!authStore.isAdmin"><i class="fa-solid fa-user"></i></span
-          ><span v-if="authStore.isAdmin"><i class="fa-solid fa-crown"></i></span>
-          {{ authStore.userProfile?.name }}</span
-        >
-        <span class="logout"> [ <button class="link-button" @click="logout">Log out</button> ] </span>
+        <span class="username" :class="{ admin: authStore.isAdmin }">
+          <span v-if="!authStore.isAdmin"><i class="fa-solid fa-user"></i></span>
+          <span v-if="authStore.isAdmin"><i class="fa-solid fa-crown"></i></span>
+          {{ authStore.userProfile?.name }}
+        </span>
+        <span class="logout">
+          [
+          <button class="link-button" @click="logout">
+            <i class="fa-solid fa-right-from-bracket"></i>
+            Log out
+          </button>
+          ]
+        </span>
       </span>
       <span v-if="!authStore.isAuthorized" class="user-unauthorized">
-        <span class="login"> [ <router-link :to="{ name: 'login' }">Login</router-link> ] </span>
-        <span class="register"> [ <router-link :to="{ name: 'register' }">Register</router-link> ] </span>
+        <span class="login">
+          [
+          <router-link :to="{ name: 'login' }">
+            <i class="fa-solid fa-right-to-bracket"></i>
+            Login
+          </router-link>
+          ]
+        </span>
+        <span class="register">
+          [
+          <router-link :to="{ name: 'register' }">
+            <i class="fa-solid fa-pen"></i>
+            Register
+          </router-link>
+          ]
+        </span>
       </span>
     </div>
     <div class="content">
