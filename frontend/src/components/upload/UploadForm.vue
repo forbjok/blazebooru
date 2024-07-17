@@ -81,6 +81,10 @@ const canSubmit = computed(() => {
   return vm.posts.length > 0;
 });
 
+const removePost = (post: PostViewModel) => {
+  vm.posts = vm.posts.filter((p) => p !== post);
+};
+
 const upload = () => {
   const uploadPosts: UploadPost[] = [];
 
@@ -120,7 +124,12 @@ const upload = () => {
         </td>
         <td>
           <div class="post-info">
-            <label>Filename: {{ p.file.name }}</label>
+            <div class="post-filename">
+              <div class="filename">Filename: {{ p.file.name }}</div>
+              <button @click.prevent="removePost(p)" alt="Remove">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </div>
 
             <label class="post-title">Title</label>
             <input name="title" type="text" v-model="p.title" placeholder="Title" title="Title" />
@@ -210,6 +219,36 @@ const upload = () => {
 
   .post-title {
     margin-top: 0.4rem;
+  }
+
+  .post-filename {
+    display: flex;
+    flex-direction: row;
+
+    .filename {
+      flex-grow: 1;
+    }
+
+    button {
+      flex-shrink: 0;
+
+      font-size: 1.1rem;
+
+      border: none;
+      color: var(--color-button-text);
+      background-color: var(--color-button-background);
+
+      padding: 5px;
+
+      &:enabled {
+        cursor: pointer !important;
+      }
+
+      &:hover {
+        color: var(--color-button-hover);
+        cursor: pointer;
+      }
+    }
   }
 }
 </style>
