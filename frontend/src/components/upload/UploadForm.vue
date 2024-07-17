@@ -32,6 +32,7 @@ const emit = defineEmits<{
   (e: "upload", posts: UploadPost[]): void;
 }>();
 
+const fileInput = ref<typeof HTMLInputElement>();
 const tagsEditor = ref<typeof TagsEditor>();
 
 const vm = reactive<ViewModel>({
@@ -47,7 +48,7 @@ onMounted(async () => {
   sysConfig.value = await mainStore.getSysConfig();
 });
 
-const fileSelected = (event: Event) => {
+const filesSelected = (event: Event) => {
   const input = event.target as HTMLInputElement;
   if (!input || !input.files) return;
 
@@ -81,6 +82,10 @@ const canSubmit = computed(() => {
   return vm.posts.length > 0;
 });
 
+const addFiles = () => {
+  (fileInput.value as any)?.click();
+};
+
 const removePost = (post: PostViewModel) => {
   vm.posts = vm.posts.filter((p) => p !== post);
 };
@@ -107,11 +112,31 @@ const upload = () => {
 
 <template>
   <form class="upload-form" @submit.prevent="upload">
-    <label>Common tags</label>
-    <TagsEditor ref="tagsEditor" v-model="vm.tags" />
+    <div class="common-tags">
+      <label>Common tags</label>
+      <TagsEditor ref="tagsEditor" v-model="vm.tags" />
+    </div>
 
-    <input name="file" type="file" accept="image/*" @change="fileSelected" multiple="true" />
+    <br />
+
+    <input
+      ref="fileInput"
+      name="file"
+      type="file"
+      accept="image/*"
+      @change="filesSelected"
+      multiple="true"
+      class="file-input"
+    />
+
+    <button @click.prevent="addFiles" class="add-files-button">
+      <i class="fa-solid fa-plus"></i>
+      <span>Add files</span>
+    </button>
+
     <p>Max file size: {{ maxImageSizeText }}</p>
+
+    <br />
 
     <table class="posts-table">
       <tr>
@@ -119,7 +144,7 @@ const upload = () => {
         <th>Info</th>
       </tr>
       <tr v-for="p in vm.posts">
-        <td>
+        <td class="image-preview">
           <div class="image-preview"><img :src="p.previewUrl" :alt="p.file.name" /></div>
         </td>
         <td>
@@ -153,6 +178,8 @@ const upload = () => {
       </tr>
     </table>
 
+    <br />
+
     <input :disabled="!canSubmit" class="submit-button" type="submit" value="Upload" />
   </form>
 </template>
@@ -161,7 +188,7 @@ const upload = () => {
 .upload-form {
   display: flex;
   flex-direction: column;
-  align-items: start;
+  align-items: center;
   gap: 0.5rem;
 }
 
@@ -174,24 +201,45 @@ const upload = () => {
   max-width: 100%;
 }
 
-.submit-button {
-  margin-top: 1rem;
+.file-input {
+  display: none;
 }
 
-.image-preview {
+.add-files-button {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  gap: 0.2rem;
 
-  max-width: 16rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: 0.2rem;
+}
+
+.submit-button {
+  padding: 0.4rem 0.6rem;
+}
+
+div.image-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 16vw;
+  max-height: 16vw;
 
   img {
-    background-color: var(--color-post-background);
+    display: block;
+
     margin-top: 0.1rem;
+
+    max-width: 16vw;
+    max-height: 16vw;
   }
 }
 
 .posts-table {
   border-collapse: collapse;
+
+  min-width: 40vw;
 
   th {
     background-color: var(--color-list-header-background);
@@ -209,6 +257,11 @@ const upload = () => {
   td {
     overflow: hidden;
     vertical-align: top;
+
+    &.image-preview {
+      background-color: black;
+      vertical-align: middle;
+    }
   }
 }
 
@@ -238,7 +291,7 @@ const upload = () => {
       color: var(--color-button-text);
       background-color: var(--color-button-background);
 
-      padding: 5px;
+      padding: 0.2rem 0.4rem;
 
       &:enabled {
         cursor: pointer !important;
