@@ -80,4 +80,5 @@ pub struct PageInfo {
 pub struct Config {
     pub max_image_size: usize,
     pub require_login: bool,
+    pub allow_registration: bool,
 }

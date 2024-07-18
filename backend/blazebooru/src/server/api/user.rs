@@ -42,6 +42,10 @@ async fn register_user(
     SecureClientIp(ip): SecureClientIp,
     Json(req): Json<RegisterUserRequest>,
 ) -> Result<Json<LoginResponse>, ApiError> {
+    if !server.config.allow_registration {
+        return Err(ApiError::Forbidden);
+    }
+
     let user = lm::NewUser {
         name: req.name.into(),
         password: req.password.into(),

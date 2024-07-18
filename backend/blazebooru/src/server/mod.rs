@@ -35,6 +35,8 @@ enum ApiError {
     NotFound,
     #[error("Unauthorized")]
     Unauthorized,
+    #[error("Forbidden")]
+    Forbidden,
 }
 
 impl BlazeBooruServer {
@@ -80,6 +82,7 @@ impl IntoResponse for ApiError {
             Self::BadRequest => (StatusCode::BAD_REQUEST, ()).into_response(),
             Self::NotFound => (StatusCode::NOT_FOUND, ()).into_response(),
             Self::Unauthorized => (StatusCode::UNAUTHORIZED, ()).into_response(),
+            Self::Forbidden => (StatusCode::FORBIDDEN, ()).into_response(),
         }
     }
 }

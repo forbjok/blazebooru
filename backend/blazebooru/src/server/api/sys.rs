@@ -17,6 +17,7 @@ async fn get_config(State(server): State<Arc<BlazeBooruServer>>) -> Result<Json<
     let config = vm::Config {
         max_image_size: server.config.max_image_size,
         require_login: server.config.require_login,
+        allow_registration: server.config.allow_registration,
     };
 
     Ok(Json(config))

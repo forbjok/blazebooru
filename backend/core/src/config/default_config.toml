@@ -5,3 +5,4 @@
 
 #max-image-size = 10_000_000
 #require-login = false
+#allow-registration = true

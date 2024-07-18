@@ -1,9 +1,12 @@
 <script setup lang="ts">
+import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 
 import { useAuthStore } from "@/stores/auth";
 import { useMainStore } from "@/stores/main";
 import { useUploadStore } from "@/stores/upload";
+
+import type { SysConfig } from "@/models/api/sys";
 
 const router = useRouter();
 
@@ -11,11 +14,16 @@ const authStore = useAuthStore();
 const mainStore = useMainStore();
 const uploadStore = useUploadStore();
 
+const sysConfig = ref<SysConfig>();
+
+onMounted(async () => {
+  sysConfig.value = await mainStore.getSysConfig();
+});
+
 const logout = async () => {
   await authStore.logout();
 
-  const sysConfig = await mainStore.getSysConfig();
-  if (sysConfig.require_login) {
+  if (sysConfig.value?.require_login) {
     router.replace({ name: "login" });
     return;
   }
@@ -73,7 +81,7 @@ const logout = async () => {
           </router-link>
           ]
         </span>
-        <span class="register">
+        <span v-if="sysConfig?.allow_registration" class="register">
           [
           <router-link :to="{ name: 'register' }">
             <i class="fa-solid fa-pen"></i>
