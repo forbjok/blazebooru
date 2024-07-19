@@ -10,6 +10,7 @@ import { useMainStore } from "@/stores/main";
 import type { UploadPost } from "@/stores/upload";
 
 import type { SysConfig } from "@/models/api/sys";
+import { useDropZone } from "@vueuse/core";
 
 const mainStore = useMainStore();
 
@@ -28,9 +29,15 @@ interface ViewModel {
   posts: PostViewModel[];
 }
 
+const props = defineProps<{
+  dropZoneRef?: HTMLElement;
+}>();
+
 const emit = defineEmits<{
   (e: "upload", posts: UploadPost[]): void;
 }>();
+
+const { dropZoneRef } = toRefs(props);
 
 const fileInput = ref<typeof HTMLInputElement>();
 const tagsEditor = ref<typeof TagsEditor>();
@@ -42,41 +49,62 @@ const vm = reactive<ViewModel>({
 
 const sysConfig = ref<SysConfig>();
 
-const maxImageSizeText = computed(() => filesize(sysConfig.value?.max_image_size || 0));
+const maxImageSize = computed(() => sysConfig.value?.max_image_size || 0);
+const maxImageSizeText = computed(() => filesize(maxImageSize.value));
 
 onMounted(async () => {
   sysConfig.value = await mainStore.getSysConfig();
 });
 
+const addFile = (file: File) => {
+  // If file is not an image, ignore it.
+  if (!file.type.startsWith("image/")) {
+    return;
+  }
+
+  if (file && file.size > maxImageSize.value) {
+    alert(
+      `The selected file '${file.name}' is bigger than the maximum allowed size of ${maxImageSizeText.value} and will be ignored.`,
+    );
+
+    return;
+  }
+
+  const new_post: PostViewModel = {
+    title: "",
+    description: "",
+    source: "",
+    tags: [],
+    file,
+    previewUrl: URL.createObjectURL(file),
+    progress: 0,
+  };
+
+  vm.posts.push(new_post);
+};
+
 const filesSelected = (event: Event) => {
   const input = event.target as HTMLInputElement;
   if (!input || !input.files) return;
 
-  const maxImageSize = sysConfig.value?.max_image_size || 0;
-
   for (const file of input.files) {
-    if (file && file.size > maxImageSize) {
-      alert(
-        `The selected file '${file.name}' is bigger than the maximum allowed size of ${filesize(maxImageSize)} and will be ignored.`,
-      );
-      continue;
-    }
-
-    const new_post: PostViewModel = {
-      title: "",
-      description: "",
-      source: "",
-      tags: [],
-      file,
-      previewUrl: URL.createObjectURL(file),
-      progress: 0,
-    };
-
-    vm.posts.push(new_post);
+    addFile(file);
   }
 
   input.value = "";
 };
+
+const filesDropped = (files: File[] | null) => {
+  if (!files) {
+    return;
+  }
+
+  for (const file of files) {
+    addFile(file);
+  }
+};
+
+useDropZone(dropZoneRef, { onDrop: filesDropped });
 
 const canSubmit = computed(() => {
   return vm.posts.length > 0;
