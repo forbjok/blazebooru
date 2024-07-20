@@ -45,6 +45,15 @@ export const useUploadStore = defineStore("upload", () => {
     stagedPosts.value.push(post);
   }
 
+  function unstage(post: StagedPost) {
+    const index = stagedPosts.value.findIndex((p) => p === post);
+    if (index < 0) {
+      return;
+    }
+
+    stagedPosts.value.splice(index, 1);
+  }
+
   function queue(post: StagedPost) {
     const qp = toQueuedUploadPost(post);
 
@@ -152,6 +161,7 @@ export const useUploadStore = defineStore("upload", () => {
     stagedPosts,
     queuedPosts,
     stage,
+    unstage,
     queue,
     clearStaged,
     queueStaged,

@@ -28,6 +28,10 @@ const add = async (post: StagedPost) => {
   uploadStore.stage(post);
 };
 
+const remove = async (post: StagedPost) => {
+  uploadStore.unstage(post);
+};
+
 const upload = async (_posts: StagedPost[]) => {
   uploadStore.queueStaged();
   await uploadStore.processUploadQueue();
@@ -45,6 +49,7 @@ const upload = async (_posts: StagedPost[]) => {
           :posts="uploadStore.stagedPosts"
           :drop-zone-ref="dropZoneRef"
           @add="add"
+          @remove="remove"
           @upload="upload"
         />
       </div>

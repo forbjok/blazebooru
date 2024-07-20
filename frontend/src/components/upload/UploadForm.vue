@@ -24,6 +24,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: "add", post: StagedPost): void;
+  (e: "remove", post: StagedPost): void;
   (e: "upload", posts: StagedPost[]): void;
 }>();
 
@@ -106,7 +107,7 @@ const addFiles = () => {
 };
 
 const removePost = (post: StagedPost) => {
-  vm.posts = vm.posts.filter((p) => p !== post);
+  emit("remove", post);
 };
 
 const upload = () => {
@@ -133,7 +134,7 @@ const upload = () => {
       class="file-input"
     />
 
-    <button @click.prevent="addFiles" class="add-files-button">
+    <button type="button" class="add-files-button" @click="addFiles">
       <i class="fa-solid fa-plus"></i>
       <span>Add files</span>
     </button>
@@ -155,7 +156,7 @@ const upload = () => {
           <div class="post-info">
             <div class="post-filename">
               <div class="filename">Filename: {{ p.file.name }}</div>
-              <button @click.prevent="removePost(p)" alt="Remove">
+              <button type="button" @click="removePost(p)" alt="Remove">
                 <i class="fa-solid fa-trash"></i>
               </button>
             </div>
