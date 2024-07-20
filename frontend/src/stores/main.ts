@@ -276,6 +276,10 @@ export const useMainStore = defineStore("main", () => {
     calculatedPages = [];
     currentPosts.value = [];
 
+    if (sysConfig.value?.require_login && !authStore.isAuthorized) {
+      return;
+    }
+
     await loadPage(1);
     await calculateLastPage();
   }
