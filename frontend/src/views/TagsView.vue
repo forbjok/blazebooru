@@ -158,34 +158,25 @@ main {
 }
 
 .tags-table {
-  background-color: var(--color-default-background);
-  //border: 1px solid;
   border-spacing: 0;
 
   padding-top: 1rem;
   padding-bottom: 1rem;
 
   th {
-    padding-right: 0.8rem;
-    padding-bottom: 0.4rem;
+    background-color: var(--color-list-header-background);
+
+    padding: 0.4rem;
 
     text-align: left;
   }
 
-  th:first-child {
-    padding-left: 1rem;
-  }
-
-  th:last-child {
-    padding-right: 1rem;
-  }
-
   tr {
-    background-color: var(--color-default-background);
-  }
+    background-color: var(--color-list-background);
 
-  tr:nth-child(odd) {
-    filter: brightness(0.9);
+    &:nth-child(odd) {
+      background-color: var(--color-list-alt-background);
+    }
   }
 
   td {
@@ -194,16 +185,8 @@ main {
     height: 1.6rem;
   }
 
-  td:first-child {
-    padding-left: 1rem;
-  }
-
   td:not(:first-child) {
     border-left: 0.2rem solid var(--color-table-divider);
-  }
-
-  td:last-child {
-    padding-right: 1rem;
   }
 }
 
