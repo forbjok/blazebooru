@@ -203,7 +203,7 @@ main {
   tr {
     background-color: var(--color-list-background);
 
-    &:nth-child(odd) {
+    &:nth-child(even) {
       background-color: var(--color-list-alt-background);
     }
   }

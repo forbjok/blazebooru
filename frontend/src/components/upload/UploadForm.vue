@@ -144,43 +144,47 @@ const upload = () => {
     <br />
 
     <table class="posts-table">
-      <tr>
-        <th>Preview</th>
-        <th>Info</th>
-      </tr>
-      <tr v-for="p in vm.posts">
-        <td class="image-preview">
-          <div class="image-preview"><img :src="p.previewUrl" :alt="p.file.name" /></div>
-        </td>
-        <td>
-          <div class="post-info">
-            <div class="post-filename">
-              <div class="filename">Filename: {{ p.file.name }}</div>
-              <button type="button" @click="removePost(p)" alt="Remove">
-                <i class="fa-solid fa-trash"></i>
-              </button>
+      <thead>
+        <tr>
+          <th>Preview</th>
+          <th>Info</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="p in vm.posts">
+          <td class="image-preview">
+            <div class="image-preview"><img :src="p.previewUrl" :alt="p.file.name" /></div>
+          </td>
+          <td>
+            <div class="post-info">
+              <div class="post-filename">
+                <div class="filename">Filename: {{ p.file.name }}</div>
+                <button type="button" @click="removePost(p)" alt="Remove">
+                  <i class="fa-solid fa-trash"></i>
+                </button>
+              </div>
+
+              <label class="post-title">Title</label>
+              <input name="title" type="text" v-model="p.title" placeholder="Title" title="Title" />
+
+              <label>Description</label>
+              <textarea
+                class="description-field"
+                name="description"
+                v-model="p.description"
+                placeholder="Description"
+                wrap="soft"
+              ></textarea>
+
+              <label>Source</label>
+              <input name="source" type="text" v-model="p.source" placeholder="Source" title="Source" />
+
+              <label>Tags</label>
+              <TagsEditor v-model="p.tags" />
             </div>
-
-            <label class="post-title">Title</label>
-            <input name="title" type="text" v-model="p.title" placeholder="Title" title="Title" />
-
-            <label>Description</label>
-            <textarea
-              class="description-field"
-              name="description"
-              v-model="p.description"
-              placeholder="Description"
-              wrap="soft"
-            ></textarea>
-
-            <label>Source</label>
-            <input name="source" type="text" v-model="p.source" placeholder="Source" title="Source" />
-
-            <label>Tags</label>
-            <TagsEditor v-model="p.tags" />
-          </div>
-        </td>
-      </tr>
+          </td>
+        </tr>
+      </tbody>
     </table>
 
     <br />
@@ -254,7 +258,7 @@ div.image-preview {
   tr {
     background-color: var(--color-list-background);
 
-    &:nth-child(odd) {
+    &:nth-child(even) {
       background-color: var(--color-list-alt-background);
     }
   }
