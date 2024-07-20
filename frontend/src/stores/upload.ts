@@ -77,11 +77,6 @@ export const useUploadStore = defineStore("upload", () => {
     isUploading.value = true;
     clearFinished();
 
-    const prevOnbeforeunload = window.onbeforeunload;
-    window.onbeforeunload = () => {
-      return false;
-    };
-
     try {
       while (true) {
         const uploadPosts = [...queuedPosts.value.filter((p) => !p.is_processed)];
@@ -139,10 +134,17 @@ export const useUploadStore = defineStore("upload", () => {
         }
       }
     } finally {
-      window.onbeforeunload = prevOnbeforeunload;
       isUploading.value = false;
     }
   }
+
+  function onBeforeUnload(e: BeforeUnloadEvent) {
+    if (isUploading.value || stagedPosts.value.length > 0) {
+      e.preventDefault();
+    }
+  }
+
+  window.addEventListener("beforeunload", onBeforeUnload);
 
   return {
     isUploading,
