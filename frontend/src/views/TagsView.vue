@@ -120,6 +120,11 @@ const saveEdit = async () => {
 
   cancelEdit();
 };
+
+const clickTag = async (tag: string) => {
+  await mainStore.searchPosts({ tags: [tag], exclude_tags: [] });
+  router.push({ name: "browse" });
+};
 </script>
 
 <template>
@@ -136,7 +141,9 @@ const saveEdit = async () => {
           </thead>
           <tbody>
             <tr v-for="t of tags" :key="t.id" class="tag">
-              <td>{{ t.tag }}</td>
+              <td>
+                <button class="link-button" type="button" @click="clickTag(t.tag)">{{ t.tag }}</button>
+              </td>
               <td>
                 <Tags :tags="t.aliases" />
               </td>

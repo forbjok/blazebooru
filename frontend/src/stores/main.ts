@@ -280,16 +280,9 @@ export const useMainStore = defineStore("main", () => {
     await calculateLastPage();
   }
 
-  async function initializePosts() {
-    if (currentPosts.value.length > 0) {
-      return;
-    }
-
-    await searchPosts(EMPTY_SEARCH);
-  }
-
   async function initialize() {
     await fetchSysConfig();
+    await searchPosts(EMPTY_SEARCH);
   }
 
   const initializePromise = initialize();
@@ -309,7 +302,6 @@ export const useMainStore = defineStore("main", () => {
     getPageNumbers,
     clearSearch,
     getPost,
-    initializePosts,
     loadPage,
     loadLastPage,
     refresh,

@@ -49,13 +49,14 @@ onMounted(async () => {
     return;
   }
 
-  await mainStore.initializePosts();
   const page = parseInt((route.query.p as LocationQueryValue) || "");
   if (page) {
     mainStore.loadPage(page);
   } else {
     router.replace({ name: "browse", query: { p: mainStore.currentPage } });
   }
+
+  await mainStore.refresh();
 
   nextTick(() => {
     searchForm.value?.focus();
