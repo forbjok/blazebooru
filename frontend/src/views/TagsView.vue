@@ -34,6 +34,10 @@ const tags = computed(() => tagsStore.currentTags.filter((t) => !t.alias_of_tag)
 const can_edit = computed(() => authStore.isAdmin);
 
 onMounted(async () => {
+  // Ensure the auth store has fully initialized
+  // in order to be able to know whether the user is an admin.
+  await authStore.isInitialized();
+
   if (!authStore.isAuthorized) {
     router.replace({ name: "login" });
     return;

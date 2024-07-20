@@ -131,7 +131,25 @@ export const useAuthStore = defineStore("auth", () => {
     userProfile.value = undefined;
   }
 
-  getUserProfile();
+  async function initialize() {
+    await getUserProfile();
+  }
 
-  return { isAuthorized, isAdmin, userProfile, getAccessToken, getAuthHeaders, login, logout, register };
+  const initializePromise = initialize();
+
+  async function isInitialized() {
+    await initializePromise;
+  }
+
+  return {
+    isAuthorized,
+    isAdmin,
+    userProfile,
+    getAccessToken,
+    getAuthHeaders,
+    login,
+    logout,
+    register,
+    isInitialized,
+  };
 });
