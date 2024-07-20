@@ -25,10 +25,11 @@ const EMPTY_SEARCH = {
 export const useMainStore = defineStore("main", () => {
   const authStore = useAuthStore();
 
+  const sysConfig = ref<SysConfig>();
+
   const activeSearch = ref<Search>(EMPTY_SEARCH);
 
   let calculatedPages: Record<number, PageInfo> = {};
-  const sysConfig = ref<SysConfig>();
   const lastPage = ref<PageInfo>();
   const currentPage = ref(-1);
   const currentPosts = ref<Post[]>([]);
@@ -50,14 +51,10 @@ export const useMainStore = defineStore("main", () => {
     return tags;
   });
 
-  async function getSysConfig() {
-    if (!sysConfig.value) {
-      const res = await axios.get<SysConfig>("/api/sys/config");
+  async function fetchSysConfig() {
+    const res = await axios.get<SysConfig>("/api/sys/config");
 
-      sysConfig.value = res.data;
-    }
-
-    return sysConfig.value;
+    sysConfig.value = res.data;
   }
 
   function getPageNumbers(max_pages: number) {
@@ -291,14 +288,24 @@ export const useMainStore = defineStore("main", () => {
     await searchPosts(EMPTY_SEARCH);
   }
 
+  async function initialize() {
+    await fetchSysConfig();
+  }
+
+  const initializePromise = initialize();
+
+  async function isInitialized() {
+    await initializePromise;
+  }
+
   return {
+    sysConfig,
     activeSearch,
     currentPage,
     pageCount,
     currentPosts,
     currentTags,
     settings,
-    getSysConfig,
     getPageNumbers,
     clearSearch,
     getPost,
@@ -309,5 +316,6 @@ export const useMainStore = defineStore("main", () => {
     searchPosts,
     updatePost,
     deletePost,
+    isInitialized,
   };
 });

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref, toRefs, watch } from "vue";
+import { computed, reactive, ref, toRefs, watch } from "vue";
 import { filesize } from "filesize";
 
 import TagsEditor from "@/components/tag/TagsEditor.vue";
@@ -7,7 +7,6 @@ import TagsEditor from "@/components/tag/TagsEditor.vue";
 import { useMainStore } from "@/stores/main";
 import type { StagedPost } from "@/stores/upload";
 
-import type { SysConfig } from "@/models/api/sys";
 import { useDropZone } from "@vueuse/core";
 
 const mainStore = useMainStore();
@@ -38,9 +37,7 @@ const vm = reactive<ViewModel>({
   posts: posts.value || [],
 });
 
-const sysConfig = ref<SysConfig>();
-
-const maxImageSize = computed(() => sysConfig.value?.max_image_size || 0);
+const maxImageSize = computed(() => mainStore.sysConfig?.max_image_size || 0);
 const maxImageSizeText = computed(() => filesize(maxImageSize.value));
 
 watch(commonTags, (v) => {
@@ -49,10 +46,6 @@ watch(commonTags, (v) => {
 
 watch(posts, (v) => {
   vm.posts = v;
-});
-
-onMounted(async () => {
-  sysConfig.value = await mainStore.getSysConfig();
 });
 
 const addFile = (file: File) => {

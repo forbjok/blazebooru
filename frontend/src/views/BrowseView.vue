@@ -42,8 +42,9 @@ onBeforeRouteUpdate(async (to) => {
 });
 
 onMounted(async () => {
-  const sysConfig = await mainStore.getSysConfig();
-  if (sysConfig.require_login && !authStore.isAuthorized) {
+  await mainStore.isInitialized();
+
+  if (mainStore.sysConfig!.require_login && !authStore.isAuthorized) {
     router.replace({ name: "login" });
     return;
   }
