@@ -82,6 +82,11 @@ const postComment = async () => {
   // Add new comment to the list
   comments.value.push(comment);
 };
+
+const clickTag = async (tag: string) => {
+  await mainStore.searchPosts({ tags: [tag], exclude_tags: [] });
+  router.push({ name: "browse" });
+};
 </script>
 
 <template>
@@ -95,6 +100,7 @@ const postComment = async () => {
             :post="post"
             :can_edit_post="can_edit_post"
             :can_edit_tags="can_edit_tags"
+            @clickTag="clickTag"
             @delete="deletePost"
             @update="updatePost"
           />

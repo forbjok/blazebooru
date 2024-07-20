@@ -20,6 +20,7 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const emit = defineEmits<{
+  (e: "clickTag", tag: string): void;
   (e: "delete"): void;
   (e: "update", request: UpdatePost): void;
 }>();
@@ -78,6 +79,10 @@ const update = () => {
 const deletePost = () => {
   emit("delete");
 };
+
+const clickTag = (tag: string) => {
+  emit("clickTag", tag);
+};
 </script>
 
 <template>
@@ -102,7 +107,7 @@ const deletePost = () => {
       <div v-if="post.source" class="source">Source: {{ post.source }}</div>
       <div v-if="post.tags" class="tags">
         Tags:
-        <Tags v-if="!editing" :tags="post.tags" />
+        <Tags v-if="!editing" :tags="post.tags" :tags-clickable="true" @click-tag="clickTag" />
         <form v-if="editing" class="edit-form" @submit.prevent="update">
           <TagsEditor ref="tagsEditor" v-model="editing.tags" />
           <div class="form-buttons">

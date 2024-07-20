@@ -4,13 +4,16 @@ import { computed, toRefs } from "vue";
 interface Props {
   tags: string[];
   actions?: boolean;
+  tagsClickable?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   actions: false,
+  tagsClickable: false,
 });
 
 const emit = defineEmits<{
+  (e: "clickTag", tag: string): void;
   (e: "delete", tag: string): void;
 }>();
 
@@ -24,8 +27,11 @@ const sortedTags = computed(() => {
 <template>
   <div class="tags">
     <div v-for="t of sortedTags" :key="t" class="tag">
-      <span class="tag-tag" :title="t">{{ t }}</span
-      ><button
+      <span v-if="!tagsClickable" class="tag-tag" :title="t">{{ t }}</span>
+      <button v-if="tagsClickable" class="tag-tag link-button" type="button" tabindex="-1" @click="emit('clickTag', t)">
+        {{ t }}
+      </button>
+      <button
         v-if="actions"
         class="delete-button link-button"
         type="button"

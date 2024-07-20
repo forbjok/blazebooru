@@ -17,7 +17,7 @@ export interface Search {
 const POSTS_PER_PAGE = 28;
 const CALCULATE_PAGES = 12;
 
-const EMPTY_SEARCH = {
+const EMPTY_SEARCH: Search = {
   tags: [],
   exclude_tags: [],
 };
