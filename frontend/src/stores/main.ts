@@ -5,7 +5,7 @@ import axios from "axios";
 
 import { useAuthStore } from "./auth";
 
-import type { PageInfo, Post, PostInfo, UpdatePost } from "@/models/api/post";
+import type { PageInfo, Post, UpdatePost } from "@/models/api/post";
 import { DEFAULT_SETTINGS, type Settings } from "@/models/settings";
 import type { SysConfig } from "@/models/api/sys";
 

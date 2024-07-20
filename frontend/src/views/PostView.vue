@@ -90,7 +90,7 @@ const clickTag = async (tag: string) => {
 </script>
 
 <template>
-  <main :class="`theme-${mainStore.settings.theme}`">
+  <main>
     <MainLayout>
       <!-- Desktop -->
       <div class="layout desktop">

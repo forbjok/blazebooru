@@ -40,7 +40,7 @@ const upload = async (_posts: StagedPost[]) => {
 </script>
 
 <template>
-  <main :class="`theme-${mainStore.settings.theme}`">
+  <main>
     <MainLayout>
       <div ref="dropZoneRef" class="content">
         <div class="title">Upload</div>

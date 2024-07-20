@@ -5,7 +5,7 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { toRefs } from "vue";
+import { computed, toRefs } from "vue";
 
 import { useMainStore } from "@/stores/main";
 
@@ -26,6 +26,8 @@ const { show } = toRefs(props);
 
 const mainStore = useMainStore();
 
+const themeClass = computed(() => `theme-${mainStore.settings.theme}`);
+
 const clickOutside = () => {
   emit("clickoutside");
 };
@@ -33,12 +35,7 @@ const clickOutside = () => {
 
 <template>
   <Teleport to="#overlay">
-    <div
-      class="modal"
-      :class="[{ darken }, `theme-${mainStore.settings.theme}`]"
-      v-if="show"
-      @click.stop="clickOutside"
-    >
+    <div class="modal" :class="[{ darken }, themeClass]" v-if="show" @click.stop="clickOutside">
       <div class="content" v-bind="$attrs" @click.stop>
         <slot></slot>
       </div>

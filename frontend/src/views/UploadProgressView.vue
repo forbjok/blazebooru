@@ -8,7 +8,7 @@ const mainStore = useMainStore();
 </script>
 
 <template>
-  <main :class="`theme-${mainStore.settings.theme}`">
+  <main>
     <MainLayout>
       <div class="content">
         <div class="title">Upload progress</div>

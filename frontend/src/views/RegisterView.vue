@@ -32,7 +32,7 @@ const register = async (request: LoginRequest) => {
 </script>
 
 <template>
-  <main :class="`theme-${mainStore.settings.theme}`">
+  <main>
     <MainLayout>
       <div class="content">
         <div class="title">Register</div>
