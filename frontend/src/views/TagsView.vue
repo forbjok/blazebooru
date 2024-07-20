@@ -49,7 +49,7 @@ onMounted(async () => {
     return;
   }
 
-  await tagsStore.initialize();
+  await tagsStore.refresh();
 });
 
 // Override F5 to refresh the results

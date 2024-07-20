@@ -53,11 +53,14 @@ export const useTagsStore = defineStore("tags", () => {
   }
 
   async function initialize() {
-    if (currentTags.value.length > 0) {
-      return;
-    }
-
+    await authStore.isInitialized();
     await searchTags("");
+  }
+
+  const initializePromise = initialize();
+
+  async function isInitialized() {
+    await initializePromise;
   }
 
   return {
@@ -67,6 +70,6 @@ export const useTagsStore = defineStore("tags", () => {
     getTag,
     updateTag,
     refresh,
-    initialize,
+    isInitialized,
   };
 });
