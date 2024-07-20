@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
+import { useRouter } from "vue-router";
 
 import Button from "@/components/common/Button.vue";
 import Dialog from "@/components/common/Dialog.vue";
@@ -15,6 +16,8 @@ import { useTagsStore } from "@/stores/tags";
 
 import type { Tag } from "@/models/api/tag";
 
+const router = useRouter();
+
 const authStore = useAuthStore();
 const mainStore = useMainStore();
 const tagsStore = useTagsStore();
@@ -29,6 +32,16 @@ const editingTag = ref<Tag & { alias_of_tags: string[] }>();
 const can_edit = computed(() => authStore.isAdmin);
 
 onMounted(async () => {
+  if (!authStore.isAuthorized) {
+    router.replace({ name: "login" });
+    return;
+  }
+
+  if (!authStore.isAdmin) {
+    router.replace({ name: "browse" });
+    return;
+  }
+
   await tagsStore.initialize();
 });
 
@@ -98,7 +111,9 @@ const saveEdit = async () => {
             <tr v-for="t of tagsStore.currentTags" :key="t.id" class="tag">
               <td>{{ t.tag }}</td>
               <td>{{ t.alias_of_tag }}</td>
-              <td><Tags :tags="t.implied_tags" /></td>
+              <td>
+                <Tags :tags="t.implied_tags" />
+              </td>
               <td v-if="can_edit">
                 <button v-if="can_edit" class="edit-tag-button link-button" @click="beginEdit(t)">
                   <i class="fa-solid fa-pen-to-square"></i> Edit
@@ -127,9 +142,9 @@ const saveEdit = async () => {
           <TagsEditor ref="tagsEditor" v-model="editingTag.implied_tags" />
         </div>
         <Toolbar class="choices">
-          <Button @click="saveEdit"
-            ><slot name="save"><i class="fa-solid fa-check"></i> Save</slot></Button
-          >
+          <Button @click="saveEdit">
+            <slot name="save"><i class="fa-solid fa-check"></i> Save</slot>
+          </Button>
           <Button @click="cancelEdit"><i class="fa-solid fa-ban"></i> Cancel</Button>
         </Toolbar>
       </div>
@@ -191,6 +206,7 @@ main {
     padding-right: 1rem;
   }
 }
+
 .edit-dialog {
   display: flex;
   flex-direction: column;

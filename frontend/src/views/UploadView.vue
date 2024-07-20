@@ -1,16 +1,28 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { onMounted, ref } from "vue";
+import { useRouter } from "vue-router";
 
 import MainLayout from "@/components/MainLayout.vue";
 import UploadForm from "@/components/upload/UploadForm.vue";
 
+import { useAuthStore } from "@/stores/auth";
 import { useMainStore } from "@/stores/main";
 import { useUploadStore, type UploadPost } from "@/stores/upload";
 
+const router = useRouter();
+
+const authStore = useAuthStore();
 const mainStore = useMainStore();
 const uploadStore = useUploadStore();
 
 const dropZoneRef = ref<HTMLElement>();
+
+onMounted(async () => {
+  if (!authStore.isAuthorized) {
+    router.replace({ name: "login" });
+    return;
+  }
+});
 
 const upload = async (posts: UploadPost[]) => {
   posts.forEach((p) => uploadStore.queue(p));
