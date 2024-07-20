@@ -27,7 +27,9 @@ const tagEntry = ref<typeof TagEntry>();
 const tagsEditor = ref<typeof TagsEditor>();
 
 const originalTag = ref<Tag>();
-const editingTag = ref<Tag & { alias_of_tags: string[] }>();
+const editingTag = ref<Tag>();
+
+const tags = computed(() => tagsStore.currentTags.filter((t) => !t.alias_of_tag));
 
 const can_edit = computed(() => authStore.isAdmin);
 
@@ -49,7 +51,7 @@ const beginEdit = (tag: Tag) => {
   originalTag.value = tag;
   editingTag.value = {
     ...tag,
-    alias_of_tags: tag.alias_of_tag ? [tag.alias_of_tag] : [],
+    aliases: [...tag.aliases],
     implied_tags: [...tag.implied_tags],
   };
 
@@ -61,17 +63,14 @@ const cancelEdit = () => {
   editDialog.value?.close();
 };
 
-const enterAliasOfTag = (tags: string[]) => {
-  editingTag.value!.alias_of_tags = [tags[0]];
-};
-
-const deleteAliasOfTag = () => {
-  editingTag.value!.alias_of_tags = [];
+const getTagByName = (tag: string): Tag | undefined => {
+  return tagsStore.currentTags.find((t) => t.tag === tag);
 };
 
 const saveEdit = async () => {
   const _editingTag = editingTag.value;
-  if (!_editingTag) {
+  const _originalTag = originalTag.value;
+  if (!_editingTag || !_originalTag) {
     return;
   }
 
@@ -79,17 +78,29 @@ const saveEdit = async () => {
   tagEntry.value?.submit();
   tagsEditor.value?.submit();
 
-  const add_implied_tags = _editingTag.implied_tags.filter((t) => !originalTag.value?.implied_tags.includes(t));
-  const remove_implied_tags = originalTag.value?.implied_tags.filter((t) => !_editingTag.implied_tags.includes(t));
+  const add_aliases = _editingTag.aliases.filter((t) => !_originalTag.aliases.includes(t));
+  const remove_aliases = _originalTag.aliases.filter((t) => !_editingTag.aliases.includes(t));
+  const add_implied_tags = _editingTag.implied_tags.filter((t) => !_originalTag.implied_tags.includes(t));
+  const remove_implied_tags = _originalTag.implied_tags.filter((t) => !_editingTag.implied_tags.includes(t));
 
   const update_tag = {
-    alias_of_tag: _editingTag.alias_of_tags[0],
+    add_aliases,
+    remove_aliases,
     add_implied_tags,
     remove_implied_tags,
   };
 
   await tagsStore.updateTag(_editingTag.id, update_tag);
   await tagsStore.getTag(_editingTag.id);
+
+  for (const alt of [...add_aliases, ...remove_aliases]) {
+    const altId = getTagByName(alt)?.id;
+    if (!altId) {
+      continue;
+    }
+
+    await tagsStore.getTag(altId);
+  }
 
   cancelEdit();
 };
@@ -103,14 +114,16 @@ const saveEdit = async () => {
         <table class="tags-table">
           <thead>
             <th>Tag</th>
-            <th>Alias of</th>
+            <th>Aliases</th>
             <th>Implied tags</th>
             <th v-if="can_edit">Actions</th>
           </thead>
           <tbody>
-            <tr v-for="t of tagsStore.currentTags" :key="t.id" class="tag">
+            <tr v-for="t of tags" :key="t.id" class="tag">
               <td>{{ t.tag }}</td>
-              <td>{{ t.alias_of_tag }}</td>
+              <td>
+                <Tags :tags="t.aliases" />
+              </td>
               <td>
                 <Tags :tags="t.implied_tags" />
               </td>
@@ -128,15 +141,8 @@ const saveEdit = async () => {
     <Dialog ref="editDialog" :darken="true" :title="`Edit tag [ ${editingTag?.tag} ]`" @closed="cancelEdit">
       <div class="edit-dialog">
         <div v-if="editingTag" class="content">
-          <label>Alias of</label>
-          <div v-if="editingTag.alias_of_tags.length === 0">None</div>
-          <Tags
-            v-if="editingTag.alias_of_tags.length > 0"
-            :tags="editingTag.alias_of_tags"
-            :actions="true"
-            @delete="deleteAliasOfTag"
-          />
-          <TagEntry ref="tagEntry" @enter="enterAliasOfTag" />
+          <label>Aliases</label>
+          <TagsEditor v-model="editingTag.aliases" />
 
           <label>Implied tags</label>
           <TagsEditor ref="tagsEditor" v-model="editingTag.implied_tags" />

@@ -1,3 +1,26 @@
+DROP VIEW view_tag;
+CREATE VIEW view_tag
+AS
+SELECT
+  t.id,
+  t.tag,
+  aot.tag AS alias_of_tag,
+  array(SELECT tag FROM tag WHERE tag.alias_of_tag_id = t.id) AS aliases,
+  array(SELECT tag FROM tag AS t1 JOIN unnest(t.implied_tag_ids) AS itid ON t1.id = itid) AS implied_tags
+FROM tag AS t
+LEFT JOIN tag AS aot ON aot.id = t.alias_of_tag_id;
+
+DROP FUNCTION update_tag;
+DROP TYPE update_tag;
+
+CREATE TYPE update_tag AS (
+  add_aliases text[],
+  remove_aliases text[],
+  add_implied_tags text[],
+  remove_implied_tags text[]
+);
+
+
 CREATE FUNCTION update_tag(
   IN p_tag_id integer,
   IN p_update_tag update_tag,

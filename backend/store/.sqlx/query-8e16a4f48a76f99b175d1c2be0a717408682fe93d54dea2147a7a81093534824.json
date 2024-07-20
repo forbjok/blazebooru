@@ -20,6 +20,11 @@
       },
       {
         "ordinal": 3,
+        "name": "aliases",
+        "type_info": "TextArray"
+      },
+      {
+        "ordinal": 4,
         "name": "implied_tags",
         "type_info": "TextArray"
       }
@@ -30,6 +35,7 @@
       ]
     },
     "nullable": [
+      true,
       true,
       true,
       true,

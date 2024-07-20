@@ -35,12 +35,16 @@ pub struct Tag {
     pub id: i32,
     pub tag: String,
     pub alias_of_tag: Option<String>,
+    pub aliases: Vec<String>,
     pub implied_tags: Vec<String>,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct UpdateTag {
-    pub alias_of_tag: Option<String>,
+    #[serde(default)]
+    pub add_aliases: Vec<String>,
+    #[serde(default)]
+    pub remove_aliases: Vec<String>,
     #[serde(default)]
     pub add_implied_tags: Vec<String>,
     #[serde(default)]

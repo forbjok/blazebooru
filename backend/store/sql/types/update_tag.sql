@@ -1,5 +1,6 @@
 CREATE TYPE update_tag AS (
-  alias_of_tag text,
+  add_aliases text[],
+  remove_aliases text[],
   add_implied_tags text[],
   remove_implied_tags text[]
 );

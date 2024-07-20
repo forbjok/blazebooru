@@ -18,8 +18,12 @@
             "kind": {
               "Composite": [
                 [
-                  "alias_of_tag",
-                  "Text"
+                  "add_aliases",
+                  "TextArray"
+                ],
+                [
+                  "remove_aliases",
+                  "TextArray"
                 ],
                 [
                   "add_implied_tags",

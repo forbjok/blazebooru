@@ -114,6 +114,7 @@ impl From<dbm::ViewTag> for vm::Tag {
             id: t.id.unwrap(),
             tag: t.tag.unwrap(),
             alias_of_tag: t.alias_of_tag,
+            aliases: t.aliases.unwrap(),
             implied_tags: t.implied_tags.unwrap(),
         }
     }
@@ -122,7 +123,8 @@ impl From<dbm::ViewTag> for vm::Tag {
 impl From<vm::UpdateTag> for dbm::UpdateTag {
     fn from(t: vm::UpdateTag) -> Self {
         dbm::UpdateTag {
-            alias_of_tag: t.alias_of_tag,
+            add_aliases: t.add_aliases,
+            remove_aliases: t.remove_aliases,
             add_implied_tags: t.add_implied_tags,
             remove_implied_tags: t.remove_implied_tags,
         }

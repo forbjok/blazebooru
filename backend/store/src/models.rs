@@ -66,6 +66,7 @@ pub struct ViewTag {
     pub id: Option<i32>,
     pub tag: Option<String>,
     pub alias_of_tag: Option<String>,
+    pub aliases: Option<Vec<String>>,
     pub implied_tags: Option<Vec<String>>,
 }
 
@@ -101,7 +102,8 @@ pub struct UpdatePost {
 #[derive(Debug, sqlx::Type)]
 #[sqlx(type_name = "update_tag")]
 pub struct UpdateTag {
-    pub alias_of_tag: Option<String>,
+    pub add_aliases: Vec<String>,
+    pub remove_aliases: Vec<String>,
     pub add_implied_tags: Vec<String>,
     pub remove_implied_tags: Vec<String>,
 }
