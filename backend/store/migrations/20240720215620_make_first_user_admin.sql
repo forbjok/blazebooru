@@ -1,3 +1,5 @@
+DROP FUNCTION create_user;
+
 CREATE FUNCTION create_user(
   IN p_user new_user
 )
