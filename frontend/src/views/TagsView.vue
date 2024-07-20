@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
+import { onKeyDown } from "@vueuse/core";
 
 import Button from "@/components/common/Button.vue";
 import Dialog from "@/components/common/Dialog.vue";
@@ -49,6 +50,17 @@ onMounted(async () => {
   }
 
   await tagsStore.initialize();
+});
+
+// Override F5 to refresh the results
+// without performing a full browser refresh.
+onKeyDown("F5", async (e) => {
+  if (e.ctrlKey) {
+    return;
+  }
+
+  e.preventDefault();
+  await tagsStore.refresh();
 });
 
 const beginEdit = (tag: Tag) => {
