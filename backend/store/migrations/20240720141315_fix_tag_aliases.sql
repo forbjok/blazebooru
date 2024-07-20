@@ -1,3 +1,5 @@
+DROP FUNCTION update_tag;
+
 CREATE FUNCTION update_tag(
   IN p_tag_id integer,
   IN p_update_tag update_tag,

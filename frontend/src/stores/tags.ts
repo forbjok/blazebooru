@@ -22,7 +22,7 @@ export const useTagsStore = defineStore("tags", () => {
     const tag = res.data;
 
     const existingIndex = currentTags.value.findIndex((t) => t.id === tag.id);
-    if (existingIndex) {
+    if (existingIndex >= 0) {
       currentTags.value[existingIndex] = tag;
     }
 
