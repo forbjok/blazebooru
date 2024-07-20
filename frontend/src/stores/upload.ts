@@ -4,14 +4,18 @@ import axios, { AxiosError } from "axios";
 
 import { useAuthStore } from "./auth";
 
-import type { Post, PostInfo } from "@/models/api/post";
+import type { PostInfo } from "@/models/api/post";
 
-export interface UploadPost {
+export interface StagedPost {
   file: File;
-  info: PostInfo;
+  title: string;
+  description: string;
+  source: string;
+  tags: string[];
+  previewUrl: string;
 }
 
-export interface QueuedUploadPost extends UploadPost {
+export interface QueuedUploadPost extends StagedPost {
   is_processed: boolean;
   is_uploading: boolean;
   progress: number;
@@ -24,9 +28,11 @@ export const useUploadStore = defineStore("upload", () => {
 
   const isUploading = ref<boolean>(false);
 
+  const commonTags = ref<string[]>([]);
+  const stagedPosts = ref<StagedPost[]>([]);
   const queuedPosts = ref<QueuedUploadPost[]>([]);
 
-  function toQueuedUploadPost(post: UploadPost): QueuedUploadPost {
+  function toQueuedUploadPost(post: StagedPost): QueuedUploadPost {
     return {
       ...post,
       is_processed: false,
@@ -35,10 +41,28 @@ export const useUploadStore = defineStore("upload", () => {
     };
   }
 
-  function queue(post: UploadPost) {
+  function stage(post: StagedPost) {
+    stagedPosts.value.push(post);
+  }
+
+  function queue(post: StagedPost) {
     const qp = toQueuedUploadPost(post);
 
     queuedPosts.value.push(qp);
+  }
+
+  function clearStaged() {
+    stagedPosts.value = [];
+  }
+
+  function queueStaged() {
+    const queuePosts = stagedPosts.value.map((p) => ({
+      ...p,
+      tags: [...commonTags.value, ...p.tags],
+    }));
+
+    queuePosts.forEach(queue);
+    clearStaged();
   }
 
   function clearFinished() {
@@ -76,7 +100,14 @@ export const useUploadStore = defineStore("upload", () => {
           try {
             const formData = new FormData();
 
-            formData.append("info", JSON.stringify(up.info));
+            const info: PostInfo = {
+              title: up.title,
+              description: up.description,
+              source: up.source,
+              tags: up.tags,
+            };
+
+            formData.append("info", JSON.stringify(info));
             formData.append("file", up.file, up.file.name);
 
             const res = await axios.post<number>("/api/post/upload", formData, {
@@ -115,8 +146,13 @@ export const useUploadStore = defineStore("upload", () => {
 
   return {
     isUploading,
+    commonTags,
+    stagedPosts,
     queuedPosts,
+    stage,
     queue,
+    clearStaged,
+    queueStaged,
     processUploadQueue,
   };
 });

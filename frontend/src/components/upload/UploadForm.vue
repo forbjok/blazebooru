@@ -1,56 +1,55 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref, toRefs } from "vue";
+import { computed, onMounted, reactive, ref, toRefs, watch } from "vue";
 import { filesize } from "filesize";
 
 import TagsEditor from "@/components/tag/TagsEditor.vue";
 
-import type { PostInfo } from "@/models/api/post";
-
 import { useMainStore } from "@/stores/main";
-import type { UploadPost } from "@/stores/upload";
+import type { StagedPost } from "@/stores/upload";
 
 import type { SysConfig } from "@/models/api/sys";
 import { useDropZone } from "@vueuse/core";
 
 const mainStore = useMainStore();
 
-interface PostViewModel {
-  title: string;
-  description: string;
-  source: string;
-  tags: string[];
-  file: File;
-  previewUrl: string;
-  progress: number;
-}
-
 interface ViewModel {
-  tags: string[];
-  posts: PostViewModel[];
+  commonTags: string[];
+  posts: StagedPost[];
 }
 
 const props = defineProps<{
+  commonTags: string[];
+  posts: StagedPost[];
   dropZoneRef?: HTMLElement;
 }>();
 
 const emit = defineEmits<{
-  (e: "upload", posts: UploadPost[]): void;
+  (e: "add", post: StagedPost): void;
+  (e: "upload", posts: StagedPost[]): void;
 }>();
 
-const { dropZoneRef } = toRefs(props);
+const { commonTags, posts, dropZoneRef } = toRefs(props);
 
 const fileInput = ref<typeof HTMLInputElement>();
 const tagsEditor = ref<typeof TagsEditor>();
 
 const vm = reactive<ViewModel>({
-  tags: [],
-  posts: [],
+  commonTags: commonTags.value || [],
+  posts: posts.value || [],
 });
 
 const sysConfig = ref<SysConfig>();
 
 const maxImageSize = computed(() => sysConfig.value?.max_image_size || 0);
 const maxImageSizeText = computed(() => filesize(maxImageSize.value));
+
+watch(commonTags, (v) => {
+  vm.commonTags = v;
+});
+
+watch(posts, (v) => {
+  vm.posts = v;
+});
 
 onMounted(async () => {
   sysConfig.value = await mainStore.getSysConfig();
@@ -70,17 +69,16 @@ const addFile = (file: File) => {
     return;
   }
 
-  const new_post: PostViewModel = {
+  const new_post: StagedPost = {
     title: "",
     description: "",
     source: "",
     tags: [],
     file,
     previewUrl: URL.createObjectURL(file),
-    progress: 0,
   };
 
-  vm.posts.push(new_post);
+  emit("add", new_post);
 };
 
 const filesSelected = (event: Event) => {
@@ -114,27 +112,12 @@ const addFiles = () => {
   (fileInput.value as any)?.click();
 };
 
-const removePost = (post: PostViewModel) => {
+const removePost = (post: StagedPost) => {
   vm.posts = vm.posts.filter((p) => p !== post);
 };
 
 const upload = () => {
-  const uploadPosts: UploadPost[] = [];
-
-  for (const p of vm.posts) {
-    let info: PostInfo = {
-      title: p.title,
-      description: p.description,
-      source: p.source,
-      tags: [...vm.tags, ...p.tags],
-    };
-
-    uploadPosts.push({ info, file: p.file });
-  }
-
-  emit("upload", uploadPosts);
-
-  vm.posts = [];
+  emit("upload", vm.posts);
 };
 </script>
 
@@ -142,7 +125,7 @@ const upload = () => {
   <form class="upload-form" @submit.prevent="upload">
     <div class="common-tags">
       <label>Common tags</label>
-      <TagsEditor ref="tagsEditor" v-model="vm.tags" />
+      <TagsEditor ref="tagsEditor" v-model="vm.commonTags" />
     </div>
 
     <br />

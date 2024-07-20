@@ -7,7 +7,7 @@ import UploadForm from "@/components/upload/UploadForm.vue";
 
 import { useAuthStore } from "@/stores/auth";
 import { useMainStore } from "@/stores/main";
-import { useUploadStore, type UploadPost } from "@/stores/upload";
+import { useUploadStore, type StagedPost } from "@/stores/upload";
 
 const router = useRouter();
 
@@ -24,8 +24,12 @@ onMounted(async () => {
   }
 });
 
-const upload = async (posts: UploadPost[]) => {
-  posts.forEach((p) => uploadStore.queue(p));
+const add = async (post: StagedPost) => {
+  uploadStore.stage(post);
+};
+
+const upload = async (_posts: StagedPost[]) => {
+  uploadStore.queueStaged();
   await uploadStore.processUploadQueue();
   await mainStore.refresh();
 };
@@ -36,7 +40,13 @@ const upload = async (posts: UploadPost[]) => {
     <MainLayout>
       <div ref="dropZoneRef" class="content">
         <div class="title">Upload</div>
-        <UploadForm :dropZoneRef="dropZoneRef" @upload="upload" />
+        <UploadForm
+          :common-tags="uploadStore.commonTags"
+          :posts="uploadStore.stagedPosts"
+          :drop-zone-ref="dropZoneRef"
+          @add="add"
+          @upload="upload"
+        />
       </div>
     </MainLayout>
   </main>
