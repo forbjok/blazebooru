@@ -1,6 +1,6 @@
 import { ref } from "vue";
 import { defineStore } from "pinia";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 
 import { useAuthStore } from "./auth";
 
@@ -91,7 +91,17 @@ export const useUploadStore = defineStore("upload", () => {
 
             up.post_id = res.data;
           } catch (err: any) {
-            up.error_message = err;
+            const _err = err as AxiosError;
+
+            var msg: string;
+            if (_err.response) {
+              msg = _err.response.data as string;
+            } else {
+              msg = _err.message;
+            }
+
+            console.log("Upload failed:", msg);
+            up.error_message = msg;
           } finally {
             up.is_uploading = false;
           }
