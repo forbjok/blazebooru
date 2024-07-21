@@ -10,12 +10,15 @@ import { useAuthStore } from "@/stores/auth";
 import { useMainStore, type Search } from "@/stores/main";
 import PoweredBy from "../components/about/PoweredBy.vue";
 import { onKeyDown } from "@vueuse/core";
+import { storeToRefs } from "pinia";
 
 const route = useRoute();
 const router = useRouter();
 
 const authStore = useAuthStore();
 const mainStore = useMainStore();
+
+const { settings } = storeToRefs(mainStore);
 
 const searchForm = ref<typeof SearchForm>();
 
@@ -33,6 +36,13 @@ watch(
 
 watch(route, () => {
   loadData();
+});
+
+watch(settings, async (v, o) => {
+  if (v.posts_per_page !== o.posts_per_page) {
+    await mainStore.refresh();
+    await loadData();
+  }
 });
 
 const loadData = async () => {
@@ -57,8 +67,8 @@ onBeforeMount(async () => {
     return;
   }
 
-  await loadData();
   await mainStore.refresh();
+  await loadData();
 });
 
 onMounted(async () => {

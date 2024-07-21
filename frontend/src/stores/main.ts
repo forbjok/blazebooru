@@ -1,4 +1,4 @@
-import { ref, computed, watch } from "vue";
+import { ref, computed } from "vue";
 import { defineStore } from "pinia";
 import { useStorage } from "@vueuse/core";
 import axios from "axios";
@@ -48,12 +48,6 @@ export const useMainStore = defineStore("main", () => {
     tags.sort((a, b) => a.localeCompare(b));
 
     return tags;
-  });
-
-  watch(settings, (v, o) => {
-    if (v.posts_per_page !== o.posts_per_page) {
-      refresh();
-    }
   });
 
   async function fetchSysConfig() {
@@ -241,6 +235,9 @@ export const useMainStore = defineStore("main", () => {
   }
 
   async function loadPage(page: number, force: boolean = false) {
+    // Make sure the page being loaded is a valid number
+    page = Math.max(1, Math.min(page, pageCount.value));
+
     // We are already on this page, do nothing.
     if (!force && currentPage.value === page) {
       return;
@@ -270,28 +267,34 @@ export const useMainStore = defineStore("main", () => {
     calculatedPages = [];
     currentPosts.value = [];
 
-    await loadPage(currentPage.value, true);
     await calculateLastPage();
+    if (currentPage.value > 0) {
+      await loadPage(currentPage.value, true);
+    }
   }
 
-  async function searchPosts(search: Search) {
+  function setSearch(search: Search) {
     activeSearch.value = search;
     currentPage.value = -1;
     lastPage.value = undefined;
     calculatedPages = [];
     currentPosts.value = [];
+  }
+
+  async function searchPosts(search: Search) {
+    setSearch(search);
 
     if (sysConfig.value?.require_login && !authStore.isAuthorized) {
       return;
     }
 
-    await loadPage(1);
     await calculateLastPage();
+    await loadPage(1);
   }
 
   async function initialize() {
     await fetchSysConfig();
-    await searchPosts(EMPTY_SEARCH);
+    await setSearch(EMPTY_SEARCH);
   }
 
   const initializePromise = initialize();
