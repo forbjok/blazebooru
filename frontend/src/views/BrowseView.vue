@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { nextTick, onMounted, ref, watch } from "vue";
-import { onBeforeRouteUpdate, useRoute, useRouter, type LocationQueryValue } from "vue-router";
+import { nextTick, onBeforeMount, onMounted, ref, watch } from "vue";
+import { useRoute, useRouter, type LocationQueryValue } from "vue-router";
 
 import MainLayout from "@/components/MainLayout.vue";
 import Posts from "@/components/post/Posts.vue";
@@ -31,17 +31,25 @@ watch(
   { deep: true },
 );
 
-onBeforeRouteUpdate(async (to) => {
-  const page = parseInt((to.query.p as LocationQueryValue) || "");
-  if (!page) {
-    router.replace({ name: "browse", query: { p: mainStore.currentPage } });
-    return;
-  }
-
-  await mainStore.loadPage(page);
+watch(route, () => {
+  loadData();
 });
 
-onMounted(async () => {
+const loadData = async () => {
+  const page = parseInt((route.query.p as LocationQueryValue) || "");
+  if (page) {
+    await mainStore.loadPage(page);
+
+    if (mainStore.currentPage !== page) {
+      router.replace({ name: "browse", query: { p: mainStore.currentPage } });
+    }
+  } else {
+    const page = Math.max(1, mainStore.currentPage);
+    router.replace({ name: "browse", query: { p: page } });
+  }
+};
+
+onBeforeMount(async () => {
   await mainStore.isInitialized();
 
   if (mainStore.sysConfig!.require_login && !authStore.isAuthorized) {
@@ -49,15 +57,11 @@ onMounted(async () => {
     return;
   }
 
-  const page = parseInt((route.query.p as LocationQueryValue) || "");
-  if (page) {
-    mainStore.loadPage(page);
-  } else {
-    router.replace({ name: "browse", query: { p: mainStore.currentPage } });
-  }
-
+  await loadData();
   await mainStore.refresh();
+});
 
+onMounted(async () => {
   nextTick(() => {
     searchForm.value?.focus();
   });
