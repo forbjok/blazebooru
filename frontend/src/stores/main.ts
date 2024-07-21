@@ -1,4 +1,4 @@
-import { ref, computed } from "vue";
+import { ref, computed, watch } from "vue";
 import { defineStore } from "pinia";
 import { useStorage } from "@vueuse/core";
 import axios from "axios";
@@ -14,7 +14,6 @@ export interface Search {
   exclude_tags: string[];
 }
 
-const POSTS_PER_PAGE = 28;
 const CALCULATE_PAGES = 12;
 
 const EMPTY_SEARCH: Search = {
@@ -33,7 +32,7 @@ export const useMainStore = defineStore("main", () => {
   const lastPage = ref<PageInfo>();
   const currentPage = ref(-1);
   const currentPosts = ref<Post[]>([]);
-  const settings = useStorage<Settings>("bb_settings", DEFAULT_SETTINGS);
+  const settings = useStorage<Settings>("bb_settings", DEFAULT_SETTINGS, undefined, { mergeDefaults: true });
 
   const pageCount = computed(() => lastPage.value?.no || 0);
 
@@ -49,6 +48,12 @@ export const useMainStore = defineStore("main", () => {
     tags.sort((a, b) => a.localeCompare(b));
 
     return tags;
+  });
+
+  watch(settings, (v, o) => {
+    if (v.posts_per_page !== o.posts_per_page) {
+      refresh();
+    }
   });
 
   async function fetchSysConfig() {
@@ -111,7 +116,7 @@ export const useMainStore = defineStore("main", () => {
         t,
         e,
         sid: start_id,
-        limit: POSTS_PER_PAGE,
+        limit: settings.value.posts_per_page,
       },
       headers: await authStore.getAuthHeaders(),
     });
@@ -132,7 +137,7 @@ export const useMainStore = defineStore("main", () => {
       params: {
         t,
         e,
-        ppp: POSTS_PER_PAGE,
+        ppp: settings.value.posts_per_page,
         pc: page_count || CALCULATE_PAGES,
         opno: origin_page?.no,
         opsid: origin_page?.start_id,
@@ -155,7 +160,7 @@ export const useMainStore = defineStore("main", () => {
       params: {
         t,
         e,
-        ppp: POSTS_PER_PAGE,
+        ppp: settings.value.posts_per_page,
       },
     });
 
