@@ -261,7 +261,7 @@ const setTag = (tag: string) => {
   .content {
     flex-grow: 1;
 
-    padding-bottom: 3rem;
+    margin-bottom: 3rem;
   }
 
   .pages {
@@ -293,6 +293,8 @@ const setTag = (tag: string) => {
 }
 
 .layout.mobile {
+  $padding-size: max(min(1rem, 2vmin), 1px);
+
   flex-direction: column;
 
   padding-bottom: 8rem;
@@ -300,6 +302,12 @@ const setTag = (tag: string) => {
   .content {
     display: flex;
     flex-direction: column;
+
+    .posts {
+      gap: $padding-size;
+      padding: $padding-size;
+      justify-content: center;
+    }
   }
 
   .search-panel {

@@ -139,7 +139,14 @@ const clickTag = async (tag: string) => {
           </a>
         </div>
         <div class="post-info">
-          <PostInfo v-if="post" :post="post" :can_edit_post="can_edit_post" @delete="deletePost" @update="updatePost" />
+          <PostInfo
+            v-if="post"
+            :post="post"
+            :can_edit_post="can_edit_post"
+            @clickTag="clickTag"
+            @delete="deletePost"
+            @update="updatePost"
+          />
           <label>Comments</label>
           <div class="post-comments">
             <PostComment v-for="c in comments" :key="c.id" :comment="c" />

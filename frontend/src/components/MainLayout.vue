@@ -1,15 +1,29 @@
 <script setup lang="ts">
+import { ref } from "vue";
 import { useRouter } from "vue-router";
 
 import { useAuthStore } from "@/stores/auth";
 import { useMainStore } from "@/stores/main";
 import { useUploadStore } from "@/stores/upload";
+import { useResizeObserver } from "@vueuse/core";
 
 const router = useRouter();
 
 const authStore = useAuthStore();
 const mainStore = useMainStore();
 const uploadStore = useUploadStore();
+
+const layoutRef = ref<HTMLDivElement>();
+const headerBar = ref<HTMLElement>();
+
+useResizeObserver(headerBar, () => {
+  const height = headerBar.value?.offsetHeight;
+  if (!height) {
+    return;
+  }
+
+  layoutRef.value?.style.setProperty("--top-bar-height", `${height}px`);
+});
 
 const logout = async () => {
   await authStore.logout();
@@ -22,9 +36,9 @@ const logout = async () => {
 </script>
 
 <template>
-  <div class="layout">
-    <div class="header-bar">
-      <span class="nav">
+  <div ref="layoutRef" class="layout">
+    <header ref="headerBar" class="header-bar">
+      <nav class="nav">
         <span class="browse">
           [
           <router-link :to="{ name: 'browse' }">
@@ -33,10 +47,10 @@ const logout = async () => {
           </router-link>
           ]
         </span>
-        <span v-if="authStore.isAuthorized" class="upload">
+        <span v-if="authStore.isAuthorized" class="bar-item upload">
           [ <router-link :to="{ name: 'upload' }"><i class="fa-solid fa-upload"></i> Upload</router-link> ]
         </span>
-        <span v-if="uploadStore.isUploading" class="upload-status">
+        <span v-if="uploadStore.isUploading" class="bar-item upload-status">
           [
           <router-link :to="{ name: 'upload-progress' }">
             <i class="fa-solid fa-bars-progress"></i>
@@ -44,17 +58,17 @@ const logout = async () => {
           </router-link>
           ]
         </span>
-        <span v-if="authStore.isAdmin" class="tags admin">
+        <span v-if="authStore.isAdmin" class="bar-item tags admin">
           [ <router-link :to="{ name: 'tags' }">Tags</router-link> ]
         </span>
-      </span>
+      </nav>
       <span v-if="authStore.isAuthorized" class="user-authorized">
         <span class="username" :class="{ admin: authStore.isAdmin }">
           <span v-if="!authStore.isAdmin"><i class="fa-solid fa-user"></i></span>
           <span v-if="authStore.isAdmin"><i class="fa-solid fa-crown"></i></span>
           {{ authStore.userProfile?.name }}
         </span>
-        <span class="logout">
+        <span class="bar-item logout">
           [
           <button class="link-button" @click="logout">
             <i class="fa-solid fa-right-from-bracket"></i>
@@ -81,7 +95,7 @@ const logout = async () => {
           ]
         </span>
       </span>
-    </div>
+    </header>
     <div class="content">
       <slot></slot>
     </div>
@@ -90,7 +104,6 @@ const logout = async () => {
 
 <style scoped lang="scss">
 .layout {
-  --top-bar-height: 2rem;
   --max-content-height: calc(100vh - var(--top-bar-height));
 
   padding-top: var(--top-bar-height);
@@ -118,6 +131,10 @@ const logout = async () => {
   color: var(--color-headerbar-text);
 
   cursor: default;
+
+  .bar-item {
+    white-space: nowrap;
+  }
 
   .nav {
     flex-grow: 1;

@@ -44,10 +44,12 @@ const { posts } = toRefs(props);
   background-color: var(--color-post-background);
   width: var(--thumbnail-size);
   height: var(--thumbnail-size);
+  max-width: 43vmin;
+  max-height: 43vmin;
 
   img {
-    max-width: var(--thumbnail-size);
-    max-height: var(--thumbnail-size);
+    max-width: min(var(--thumbnail-size), 100%);
+    max-height: min(var(--thumbnail-size), 100%);
   }
 }
 </style>

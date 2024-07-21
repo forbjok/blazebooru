@@ -22,13 +22,17 @@ const { tags, actions } = toRefs(props);
 const sortedTags = computed(() => {
   return [...tags.value].sort((a, b) => a.localeCompare(b));
 });
+
+const clickTag = (tag: string) => {
+  emit("clickTag", tag);
+};
 </script>
 
 <template>
   <div class="tags">
     <div v-for="t of sortedTags" :key="t" class="tag">
       <span v-if="!tagsClickable" class="tag-tag" :title="t">{{ t }}</span>
-      <button v-if="tagsClickable" class="tag-tag link-button" type="button" tabindex="-1" @click="emit('clickTag', t)">
+      <button v-if="tagsClickable" class="tag-tag link-button" type="button" tabindex="-1" @click="clickTag(t)">
         {{ t }}
       </button>
       <button

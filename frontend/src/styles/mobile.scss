@@ -1,16 +1,12 @@
 // If desktop, hide all mobile-specific elements
-@media not screen and (max-width: 480px) {
+@media screen and (min-aspect-ratio: 9/10) {
   .mobile {
     display: none !important;
   }
 }
 
-@media only screen and (max-width: 480px) {
+@media screen and (max-aspect-ratio: 9/10) {
   .desktop {
     display: none !important;
   }
-}
-
-.mobile {
-  --thumbnail-size: 180px;
 }
