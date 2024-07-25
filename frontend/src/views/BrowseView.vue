@@ -11,6 +11,7 @@ import { useMainStore, type Search } from "@/stores/main";
 import PoweredBy from "../components/about/PoweredBy.vue";
 import { onKeyDown } from "@vueuse/core";
 import { storeToRefs } from "pinia";
+import { getIsNavBack } from "@/utils/detect-navback";
 
 const route = useRoute();
 const router = useRouter();
@@ -35,23 +36,32 @@ watch(
 );
 
 watch(route, () => {
-  loadData();
+  loadData(getIsNavBack());
 });
 
 watch(settings, async (v, o) => {
   if (v.posts_per_page !== o.posts_per_page) {
     await mainStore.refresh();
-    await loadData();
+    await loadData(false);
   }
 });
 
-const loadData = async () => {
+const scrollToTop = () => {
+  window.scrollTo(0, 0);
+};
+
+const loadData = async (isNavBack: boolean = false) => {
   const page = parseInt((route.query.p as LocationQueryValue) || "");
   if (page) {
     await mainStore.loadPage(page);
 
     if (mainStore.currentPage !== page) {
       router.replace({ name: "browse", query: { p: mainStore.currentPage } });
+      return;
+    }
+
+    if (!isNavBack) {
+      scrollToTop();
     }
   } else {
     const page = Math.max(1, mainStore.currentPage);
@@ -60,6 +70,8 @@ const loadData = async () => {
 };
 
 onBeforeMount(async () => {
+  const isNavBack = getIsNavBack();
+
   await mainStore.isInitialized();
 
   if (mainStore.sysConfig!.require_login && !authStore.isAuthorized) {
@@ -67,11 +79,16 @@ onBeforeMount(async () => {
     return;
   }
 
-  await mainStore.refresh();
-  await loadData();
+  // If the user did not navigate back,
+  // perform a post refresh.
+  if (!isNavBack) {
+    await mainStore.refresh();
+  }
+
+  await loadData(isNavBack);
 });
 
-onMounted(async () => {
+onMounted(() => {
   nextTick(() => {
     searchForm.value?.focus();
   });
