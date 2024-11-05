@@ -110,8 +110,8 @@ impl BlazeBooruCore {
         let img: DynamicImage = match image::open(original_image_path) {
             Ok(image) => image,
             Err(_) => {
-                let decoder = JxlDecoder::new(File::open(original_image_path).unwrap()).unwrap();
-                image::DynamicImage::from_decoder(decoder).unwrap()
+                let decoder = JxlDecoder::new(File::open(original_image_path)?)?;
+                image::DynamicImage::from_decoder(decoder)?
             }
         };
 
