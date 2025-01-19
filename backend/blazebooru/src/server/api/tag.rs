@@ -16,8 +16,8 @@ use crate::server::BlazeBooruServer;
 pub fn router() -> Router<Arc<BlazeBooruServer>> {
     Router::new()
         .route("/", get(get_view_tags))
-        .route("/:id", get(get_view_tag))
-        .route("/:id/update", post(update_tag))
+        .route("/{id}", get(get_view_tag))
+        .route("/{id}/update", post(update_tag))
 }
 
 #[axum::debug_handler(state = Arc<BlazeBooruServer>)]

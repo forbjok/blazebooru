@@ -70,10 +70,10 @@ struct PostSearchQuery {
 pub fn router(config: &BlazeBooruConfig) -> Router<Arc<BlazeBooruServer>> {
     Router::new()
         .route("/", get(get_view_posts))
-        .route("/:id", get(get_view_post).delete(delete_post))
-        .route("/:id/update", post(update_post))
-        .route("/:id/comments", get(get_post_comments))
-        .route("/:id/comments/new", post(post_comment))
+        .route("/{id}", get(get_view_post).delete(delete_post))
+        .route("/{id}/update", post(update_post))
+        .route("/{id}/comments", get(get_post_comments))
+        .route("/{id}/comments/new", post(post_comment))
         .route("/pages", get(calculate_pages))
         .route("/pages/last", get(calculate_last_page))
         .route(

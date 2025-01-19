@@ -7,11 +7,10 @@ mod user;
 use std::sync::Arc;
 
 use axum::{
-    async_trait,
-    extract::FromRequestParts,
+    extract::{FromRequestParts, OptionalFromRequestParts},
     http::{request::Parts, StatusCode},
     response::{IntoResponse, Response},
-    Router,
+    RequestPartsExt, Router,
 };
 
 use axum_extra::{
@@ -58,20 +57,40 @@ impl IntoResponse for AuthError {
     }
 }
 
-#[async_trait]
 impl FromRequestParts<Arc<BlazeBooruServer>> for Authorized {
     type Rejection = AuthError;
 
     async fn from_request_parts(parts: &mut Parts, state: &Arc<BlazeBooruServer>) -> Result<Self, Self::Rejection> {
+        let authorized = Option::<Authorized>::from_request_parts(parts, state).await;
+
+        match authorized {
+            Ok(v) => v.ok_or(AuthError::InvalidToken),
+            Err(err) => Err(err),
+        }
+    }
+}
+
+impl OptionalFromRequestParts<Arc<BlazeBooruServer>> for Authorized {
+    type Rejection = AuthError;
+
+    async fn from_request_parts(
+        parts: &mut Parts,
+        state: &Arc<BlazeBooruServer>,
+    ) -> Result<Option<Self>, Self::Rejection> {
         // Extract the token from the authorization header
-        let TypedHeader(Authorization(bearer)) = TypedHeader::<Authorization<Bearer>>::from_request_parts(parts, state)
+        let auth_header = parts
+            .extract::<Option<TypedHeader<Authorization<Bearer>>>>()
             .await
             .map_err(|_| AuthError::InvalidToken)?;
+
+        let Some(TypedHeader(Authorization(bearer))) = auth_header else {
+            return Ok(None);
+        };
 
         let token = bearer.token();
 
         let SessionClaims { session, claims } = state.auth.verify::<SessionClaims>(token)?;
 
-        Ok(Authorized { session, claims })
+        Ok(Some(Authorized { session, claims }))
     }
 }

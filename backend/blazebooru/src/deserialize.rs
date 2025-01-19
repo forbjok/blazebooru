@@ -18,7 +18,7 @@ where
 {
     struct Delimited<V, T>(PhantomData<V>, PhantomData<T>);
 
-    impl<'de, V, T> Visitor<'de> for Delimited<V, T>
+    impl<V, T> Visitor<'_> for Delimited<V, T>
     where
         V: FromIterator<T>,
         T: FromStr,
