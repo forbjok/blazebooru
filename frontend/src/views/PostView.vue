@@ -123,7 +123,7 @@ const clickTag = async (tag: string) => {
           </form>
         </div>
         <div class="layout-content">
-          <div class="image" :class="{ expand: expand_image }" @click.prevent="expand_image = !expand_image">
+          <div class="image" @click.prevent="expand_image = !expand_image">
             <a :href="file_url">
               <img :src="file_url" alt="Image" />
             </a>
@@ -133,8 +133,8 @@ const clickTag = async (tag: string) => {
 
       <!-- Mobile -->
       <div class="layout mobile">
-        <div class="image">
-          <a :href="file_url" target="_blank">
+        <div class="image" @click.prevent="expand_image = !expand_image">
+          <a :href="file_url">
             <img :src="file_url" alt="Image" />
           </a>
         </div>
@@ -166,6 +166,11 @@ const clickTag = async (tag: string) => {
           </form>
         </div>
       </div>
+      <div v-if="expand_image" class="expanded-image" @click.prevent="expand_image = false">
+        <a :href="file_url">
+          <img :src="file_url" alt="Image" />
+        </a>
+      </div>
     </MainLayout>
   </main>
 </template>
@@ -187,6 +192,32 @@ const clickTag = async (tag: string) => {
     background-color: var(--color-post-background);
 
     padding: 0.2rem;
+  }
+}
+
+.expanded-image {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 999;
+
+  background-color: var(--color-post-background);
+
+  a {
+    display: block;
+  }
+
+  img {
+    padding: 0;
+
+    max-width: 100vw;
+    max-height: 100vh;
   }
 }
 
@@ -245,7 +276,7 @@ const clickTag = async (tag: string) => {
   }
 
   .image {
-    &:not(.expand) img {
+    img {
       max-width: 90vw;
       max-height: 92vh;
     }
