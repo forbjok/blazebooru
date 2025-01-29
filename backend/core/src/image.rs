@@ -11,7 +11,9 @@ use blazebooru_common::util::{
 use blazebooru_models::local::HashedFile;
 use bytes::Bytes;
 use futures_core::Stream;
-use image::GenericImageView;
+use image::{DynamicImage, GenericImageView};
+use jxl_oxide::integration::JxlDecoder;
+use std::fs::File;
 
 use super::BlazeBooruCore;
 
@@ -104,10 +106,16 @@ impl BlazeBooruCore {
             ..
         }: &ProcessFileResult<'a>,
     ) -> Result<ProcessImageResult<'a>, anyhow::Error> {
-        // Open image file
-        let img = image::open(original_image_path)?;
-        let (width, height) = img.dimensions();
+        // Open image file with image-rs first, then try jxl-oxide if it fails
+        let img: DynamicImage = match image::open(original_image_path) {
+            Ok(image) => image,
+            Err(_) => {
+                let decoder = JxlDecoder::new(File::open(original_image_path)?)?;
+                image::DynamicImage::from_decoder(decoder)?
+            }
+        };
 
+        let (width, height) = img.dimensions();
         // Generate thumbnail
         let tn_ext = "webp";
         let thumbnail_filename = format!("{hash}.{tn_ext}");
