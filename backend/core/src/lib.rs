@@ -31,6 +31,7 @@ impl BlazeBooruCore {
             .expect("BLAZEBOORU_FILES_PATH not set");
 
         let temp_path = files_path.join("temp");
+        let _ = jxl_oxide::integration::register_image_decoding_hook();
 
         let public_path = files_path.join("public");
         let public_original_path = public_path.join("o");
