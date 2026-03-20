@@ -1,30 +1,60 @@
+use std::borrow::Cow;
 use std::path::Path;
+
+use anyhow::Context as _;
+use anyhow::anyhow;
 
 use blazebooru_models::export as em;
 use blazebooru_models::local as lm;
 use blazebooru_models::view as vm;
 use blazebooru_store::models as dbm;
-
 use blazebooru_store::transform::dbm_update_post_from_vm;
 
-use crate::image::ProcessFileResult;
-use crate::image::ProcessImageResult;
+use crate::file::ProcessFileResult;
+use crate::util::image::{ImageMetadata, get_image_metadata};
+use crate::util::thumbnail::{
+    AnimatedThumbnailGenerator, StaticThumbnailGenerator, ThumbnailGenerator, ThumbnailQuality,
+};
+use crate::{ANIM_IMAGE_EXT, FileKind, IMAGE_EXT};
 
 use super::BlazeBooruCore;
+
+const THUMBNAIL_WIDTH: u32 = 200;
+const THUMBNAIL_HEIGHT: u32 = 200;
+
+pub struct GeneratePostThumbnailResult<'a> {
+    pub ext: Cow<'a, str>,
+    pub tn_ext: Cow<'a, str>,
+}
 
 impl BlazeBooruCore {
     pub async fn create_post(&self, post: lm::NewPost<'_>) -> Result<i32, anyhow::Error> {
         let size = post.file.size as i32;
 
         // Process file
-        let process_file_result = self
+        let ProcessFileResult {
+            hash,
+            original_ext,
+            original_file_path,
+        } = self
             .process_file(post.file, &post.filename, &self.public_original_path)
             .await?;
 
-        let ProcessFileResult { hash, ext, .. } = &process_file_result;
+        // Check whether there are existing posts with the same hash
+        let identical_posts = self.store.get_posts_by_hash(&hash).await?;
+        if let Some(identical_post) = identical_posts.first() {
+            return Err(anyhow!(
+                "Another post with the same file already exists with ID: {}",
+                identical_post.id,
+            ));
+        }
 
-        // Process image and generate thumbnail
-        let ProcessImageResult { width, height, tn_ext } = self.process_image(&process_file_result).await?;
+        // Generate thumbnail
+        let GeneratePostThumbnailResult { ext, tn_ext } = self
+            .generate_post_thumbnail(&original_file_path, &hash, &original_ext, false)
+            .await?;
+
+        let ImageMetadata { width, height } = get_image_metadata(&original_file_path)?;
 
         let db_post = dbm::NewPost {
             user_id: Some(post.user_id),
@@ -33,8 +63,8 @@ impl BlazeBooruCore {
             source: post.source.map(|s| s.to_string()),
             filename: Some(post.filename.to_string()),
             size: Some(size),
-            width: Some(width as i32),
-            height: Some(height as i32),
+            width: Some(width),
+            height: Some(height),
             hash: Some(hash.to_string()),
             ext: Some(ext.as_ref().into()),
             tn_ext: Some(tn_ext.into()),
@@ -50,12 +80,17 @@ impl BlazeBooruCore {
             let hashed_file = self.hash_file_to_temp_file(path).await?;
 
             // Process file
-            let process_file_result = self
+            let ProcessFileResult {
+                hash,
+                original_ext,
+                original_file_path,
+            } = self
                 .process_file(hashed_file, &post.filename, &self.public_original_path)
                 .await?;
 
-            // Process image and generate thumbnail
-            self.process_image(&process_file_result).await?;
+            // Generate thumbnail
+            self.generate_post_thumbnail(&original_file_path, &hash, &original_ext, false)
+                .await?;
         }
 
         let db_post = dbm::NewPost {
@@ -168,5 +203,57 @@ impl BlazeBooruCore {
             .await?;
 
         Ok(vm::PageInfo::from(page))
+    }
+
+    /// Generate thumbnail
+    pub async fn generate_post_thumbnail<'a>(
+        &self,
+        original_image_path: &Path,
+        hash: &str,
+        ext: &'a str,
+        overwrite: bool,
+    ) -> Result<GeneratePostThumbnailResult<'a>, anyhow::Error> {
+        let file_kind = self.identify_file(ext, original_image_path);
+
+        // Animated WebP can't be transcoded, as ffmpeg doesn't support decoding it
+        let preserve_original = file_kind == FileKind::AnimatedImage && ext == "webp";
+
+        let tn_ext = match file_kind {
+            FileKind::Image => IMAGE_EXT,
+            FileKind::AnimatedImage | FileKind::Video => ANIM_IMAGE_EXT,
+        };
+
+        let thumbnail_filename = format!("{hash}.{tn_ext}");
+        let thumbnail_path = self.public_thumbnail_path.join(thumbnail_filename);
+
+        let mut tn_gen: Box<dyn ThumbnailGenerator> = match file_kind {
+            FileKind::Image => Box::new(StaticThumbnailGenerator::new(original_image_path)),
+            FileKind::AnimatedImage | FileKind::Video => Box::new(AnimatedThumbnailGenerator::new(
+                original_image_path,
+                ThumbnailQuality::Post,
+            )),
+        };
+
+        // If thumbnail does not already exist, create it.
+        let thumbnail_exists = thumbnail_path.exists();
+        if overwrite || !thumbnail_exists {
+            if preserve_original {
+                if thumbnail_exists {
+                    tokio::fs::remove_file(&thumbnail_path).await?;
+                }
+
+                // If preserving original, simply create a hard link to the original file
+                tokio::fs::hard_link(&original_image_path, &thumbnail_path).await?;
+            } else {
+                tn_gen.add(&thumbnail_path, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT);
+            }
+        }
+
+        tn_gen.generate().context("Error generating post image and thumbnail")?;
+
+        Ok(GeneratePostThumbnailResult {
+            ext: ext.into(),
+            tn_ext: tn_ext.into(),
+        })
     }
 }

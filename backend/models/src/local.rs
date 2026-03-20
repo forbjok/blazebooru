@@ -10,8 +10,8 @@ pub type Post = vm::Post;
 #[derive(Debug)]
 pub struct HashedFile {
     pub hash: String,
-    pub size: u64,
     pub path: PathBuf,
+    pub size: usize,
 }
 
 #[derive(Debug)]

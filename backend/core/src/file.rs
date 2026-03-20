@@ -1,33 +1,40 @@
 use std::{
     borrow::Cow,
+    io::Read,
     path::{Path, PathBuf},
 };
 
 use anyhow::Context;
-use blazebooru_common::util::{
-    self,
-    hash::{hash_blake3_to_file_from_file, hash_blake3_to_file_from_stream},
-};
-use blazebooru_models::local::HashedFile;
+use blazebooru_common::util::hash::hash_blake3_to_file_from_file;
 use bytes::Bytes;
 use futures_core::Stream;
-use image::GenericImageView;
+use once_cell::sync::Lazy;
+
+use blazebooru_common::util;
+use blazebooru_models::local::HashedFile;
 
 use super::BlazeBooruCore;
+use blazebooru_common::util::hash::hash_blake3_to_file_from_stream;
+
+pub const IMAGE_EXT: &str = "webp";
+pub const ANIM_IMAGE_EXT: &str = "webp";
+pub const VIDEO_EXT: &str = "webm";
 
 pub struct ProcessFileResult<'a> {
-    pub hash: Cow<'a, str>,
-    pub ext: Cow<'a, str>,
-    pub original_image_path: PathBuf,
+    pub hash: String,
+    pub original_ext: Cow<'a, str>,
+    pub original_file_path: PathBuf,
 }
 
-pub struct ProcessImageResult<'a> {
-    pub width: u32,
-    pub height: u32,
-    pub tn_ext: Cow<'a, str>,
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FileKind {
+    Image,
+    AnimatedImage,
+    Video,
 }
 
-const THUMBNAIL_SIZE: u32 = 200;
+static RE_IS_ANIMATED_WEBP: Lazy<regex::bytes::Regex> =
+    Lazy::new(|| regex::bytes::Regex::new(r"^(?s-u:RIFF.{4}WEBPVP8X.{14}ANIM)").unwrap());
 
 impl BlazeBooruCore {
     pub async fn hash_file_to_temp_file(&self, path: &Path) -> Result<HashedFile, anyhow::Error> {
@@ -36,8 +43,8 @@ impl BlazeBooruCore {
 
         Ok(HashedFile {
             hash: result.hash,
-            size: result.size as u64,
             path: temp_path,
+            size: result.size,
         })
     }
 
@@ -50,8 +57,8 @@ impl BlazeBooruCore {
 
         Ok(HashedFile {
             hash: result.hash,
-            size: result.size as u64,
             path: temp_path,
+            size: result.size,
         })
     }
 
@@ -63,13 +70,13 @@ impl BlazeBooruCore {
         filename: &'a str,
         destination_path: &Path,
     ) -> Result<ProcessFileResult<'a>, anyhow::Error> {
-        let (_, ext) = filename
+        let (_, original_ext) = filename
             .rsplit_once('.')
             .context("Could not get extension from filename")?;
 
         let hash = file.hash;
 
-        let original_image_filename = format!("{hash}.{ext}");
+        let original_image_filename = format!("{hash}.{original_ext}");
         let original_image_path = destination_path.join(original_image_filename);
 
         // If image does not already exist in originals path, move it there.
@@ -88,55 +95,41 @@ impl BlazeBooruCore {
         }
 
         Ok(ProcessFileResult {
-            hash: hash.into(),
-            ext: ext.into(),
-            original_image_path,
-        })
-    }
-
-    /// Process image, extract relevant information
-    /// and generate thumbnail.
-    pub async fn process_image<'a>(
-        &self,
-        ProcessFileResult {
             hash,
-            original_image_path,
-            ..
-        }: &ProcessFileResult<'a>,
-    ) -> Result<ProcessImageResult<'a>, anyhow::Error> {
-        // Open image file
-        let img = image::open(original_image_path)?;
-        let (width, height) = img.dimensions();
-
-        // Generate thumbnail
-        let tn_ext = "webp";
-        let thumbnail_filename = format!("{hash}.{tn_ext}");
-        let thumbnail_path = self.public_thumbnail_path.join(thumbnail_filename);
-
-        // If thumbnail does not already exist, create it.
-        let thumbnail_exists = thumbnail_path.exists();
-        if !thumbnail_exists {
-            // Only resize image if it exceeds the thumbnail dimensions
-            let tn_img = if width > THUMBNAIL_SIZE || height > THUMBNAIL_SIZE {
-                img.thumbnail(THUMBNAIL_SIZE, THUMBNAIL_SIZE)
-            } else {
-                img
-            };
-
-            tn_img
-                .into_rgba8()
-                .save(&thumbnail_path)
-                .context("Error saving thumbnail")?;
-        }
-
-        Ok(ProcessImageResult {
-            width,
-            height,
-            tn_ext: tn_ext.into(),
+            original_ext: original_ext.into(),
+            original_file_path: original_image_path,
         })
     }
 
-    pub fn is_preserve_original(&self, ext: &str) -> bool {
-        ext == "gif"
+    pub fn identify_file(&self, ext: &str, path: &Path) -> FileKind {
+        match ext {
+            "gif" => FileKind::AnimatedImage,
+            "webp" => {
+                if is_animated_webp(path) {
+                    FileKind::AnimatedImage
+                } else {
+                    FileKind::Image
+                }
+            }
+            "webm" | "mp4" | "m4v" => FileKind::Video,
+            _ => FileKind::Image,
+        }
     }
+}
+
+fn is_animated_webp(path: &Path) -> bool {
+    let Ok(mut file) = std::fs::File::open(path) else {
+        return false;
+    };
+
+    let mut buf: [u8; 34] = [0; 34];
+    if file.read_exact(&mut buf).is_err() {
+        return false;
+    }
+
+    if !RE_IS_ANIMATED_WEBP.is_match(&buf) {
+        return false;
+    }
+
+    true
 }

@@ -12,6 +12,19 @@ impl PgStore {
         Ok(post)
     }
 
+    pub async fn get_posts_by_hash(&self, hash: &str) -> Result<Vec<dbm::Post>, StoreError> {
+        let posts = sqlx::query_as!(
+            dbm::Post,
+            r#"SELECT * FROM post WHERE hash = $1 AND NOT is_deleted;"#,
+            hash
+        )
+        .fetch_all(&self.pool)
+        .await
+        .context("Error getting posts by hash from database")?;
+
+        Ok(posts)
+    }
+
     pub async fn create_post(&self, post: &dbm::NewPost, tags: &[&str]) -> Result<i32, StoreError> {
         let new_post_id = sqlx::query_scalar_unchecked!(r#"SELECT create_post($1, $2);"#, post, tags)
             .fetch_one(&self.pool)

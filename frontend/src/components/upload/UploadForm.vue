@@ -2,6 +2,7 @@
 import { filesize } from "filesize";
 import { computed, reactive, ref, toRefs, watch } from "vue";
 
+import Image from "@/components/common/Image.vue";
 import TagsEditor from "@/components/tag/TagsEditor.vue";
 
 import { useMainStore } from "@/stores/main";
@@ -51,7 +52,7 @@ watch(posts, (v) => {
 
 const addFile = (file: File) => {
   // If file is not an image, ignore it.
-  if (!file.type.startsWith("image/")) {
+  if (!file.type.startsWith("image/") && !file.type.startsWith("video/")) {
     return;
   }
 
@@ -70,6 +71,7 @@ const addFile = (file: File) => {
     tags: [],
     file,
     previewUrl: URL.createObjectURL(file),
+    previewType: file.type,
   };
 
   emit("add", new_post);
@@ -128,7 +130,7 @@ const upload = () => {
       ref="fileInput"
       name="file"
       type="file"
-      accept="image/*"
+      accept="image/*, video/webm, video/mp4"
       @change="filesSelected"
       multiple="true"
       class="file-input"
@@ -153,7 +155,13 @@ const upload = () => {
       <tbody>
         <tr v-for="p in vm.posts">
           <td class="image-preview">
-            <div class="image-preview"><img :src="p.previewUrl" :alt="p.file.name" /></div>
+            <div class="image-preview">
+              <Image
+                :src="p.previewUrl"
+                :force-video="p.previewType.startsWith('video/')"
+                :alt="p.file.name"
+              />
+            </div>
           </td>
           <td>
             <div class="post-info">
@@ -165,7 +173,13 @@ const upload = () => {
               </div>
 
               <label class="post-title">Title</label>
-              <input name="title" type="text" v-model="p.title" placeholder="Title" title="Title" />
+              <input
+                name="title"
+                type="text"
+                v-model="p.title"
+                placeholder="Title"
+                title="Title"
+              />
 
               <label>Description</label>
               <textarea
@@ -177,7 +191,13 @@ const upload = () => {
               ></textarea>
 
               <label>Source</label>
-              <input name="source" type="text" v-model="p.source" placeholder="Source" title="Source" />
+              <input
+                name="source"
+                type="text"
+                v-model="p.source"
+                placeholder="Source"
+                title="Source"
+              />
 
               <label>Tags</label>
               <TagsEditor v-model="p.tags" />
@@ -189,7 +209,12 @@ const upload = () => {
 
     <br />
 
-    <input :disabled="!canSubmit" class="submit-button" type="submit" value="Upload" />
+    <input
+      :disabled="!canSubmit"
+      class="submit-button"
+      type="submit"
+      value="Upload"
+    />
   </form>
 </template>
 

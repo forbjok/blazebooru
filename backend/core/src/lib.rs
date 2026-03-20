@@ -9,10 +9,13 @@ use config::BlazeBooruConfig;
 mod auth;
 mod comment;
 pub mod config;
-pub mod image;
+mod file;
 mod post;
 mod tag;
 mod user;
+mod util;
+
+pub use self::file::*;
 
 pub struct BlazeBooruCore {
     pub temp_path: PathBuf,

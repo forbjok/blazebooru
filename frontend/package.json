@@ -13,22 +13,22 @@
   "dependencies": {
     "@fortawesome/fontawesome-free": "^7.1.0",
     "@fortawesome/free-solid-svg-icons": "^7.1.0",
-    "@vueuse/core": "^13.9.0",
-    "axios": "^1.12.2",
+    "@vueuse/core": "^14.1.0",
+    "axios": "^1.13.2",
     "date-fns": "^4.1.0",
     "filesize": "^11.0.13",
     "parsimmon": "^1.18.1",
-    "pinia": "^3.0.3",
+    "pinia": "^3.0.4",
     "ress": "^5.0.2",
-    "sass": "^1.93.2",
-    "vue": "^3.5.22",
-    "vue-router": "^4.6.3"
+    "sass": "^1.97.2",
+    "vue": "^3.5.26",
+    "vue-router": "^4.6.4"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.2.6",
-    "@rsbuild/core": "^1.5.17",
+    "@biomejs/biome": "^2.3.11",
+    "@rsbuild/core": "^1.7.2",
     "@rsbuild/plugin-sass": "^1.4.0",
-    "@rsbuild/plugin-vue": "^1.1.2",
+    "@rsbuild/plugin-vue": "^1.2.2",
     "typescript": "^5.9.3"
   }
 }

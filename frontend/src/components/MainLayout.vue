@@ -48,13 +48,20 @@ const logout = async () => {
           ]
         </span>
         <span v-if="authStore.isAuthorized" class="bar-item upload">
-          [ <router-link :to="{ name: 'upload' }"><i class="fa-solid fa-upload"></i> Upload</router-link> ]
+          [
+          <router-link :to="{ name: 'upload' }"
+            ><i class="fa-solid fa-upload"></i> Upload</router-link
+          >
+          ]
         </span>
-        <span v-if="uploadStore.isUploading" class="bar-item upload-status">
+        <span v-if="uploadStore.hasQueuedPosts" class="bar-item upload-status">
           [
           <router-link :to="{ name: 'upload-progress' }">
             <i class="fa-solid fa-bars-progress"></i>
-            Upload in progress...
+            <span v-show="uploadStore.isUploading">
+              Upload in progress...
+            </span>
+            <span v-show="!uploadStore.isUploading">Upload status</span>
           </router-link>
           ]
         </span>
@@ -64,8 +71,12 @@ const logout = async () => {
       </nav>
       <span v-if="authStore.isAuthorized" class="user-authorized">
         <span class="username" :class="{ admin: authStore.isAdmin }">
-          <span v-if="!authStore.isAdmin"><i class="fa-solid fa-user"></i></span>
-          <span v-if="authStore.isAdmin"><i class="fa-solid fa-crown"></i></span>
+          <span v-if="!authStore.isAdmin"
+            ><i class="fa-solid fa-user"></i
+          ></span>
+          <span v-if="authStore.isAdmin"
+            ><i class="fa-solid fa-crown"></i
+          ></span>
           {{ authStore.userProfile?.name }}
         </span>
         <span class="bar-item logout">

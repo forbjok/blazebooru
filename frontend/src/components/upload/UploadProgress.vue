@@ -16,11 +16,23 @@ const uploadStore = useUploadStore();
       <tbody>
         <tr v-for="qp in uploadStore.queuedPosts">
           <td>
-            {{ qp.file.name }}
+            <router-link
+              v-if="qp.post_id"
+              :to="{ name: 'post', params: { id: qp.post_id } }"
+              class="post"
+            >
+              {{ qp.file.name }}
+            </router-link>
+            <span v-else>{{ qp.file.name }}</span>
           </td>
           <td>
             <span v-if="qp.is_uploading">{{ qp.progress }}%</span>
-            <span v-if="!!qp.post_id"><i class="fa-solid fa-check"></i></span>
+            <span v-else-if="!!qp.post_id"
+              ><i class="fa-solid fa-check"></i
+            ></span>
+            <span v-else-if="qp.error_message" :title="qp.error_message"
+              ><i class="fa-solid fa-triangle-exclamation"></i
+            ></span>
           </td>
         </tr>
       </tbody>

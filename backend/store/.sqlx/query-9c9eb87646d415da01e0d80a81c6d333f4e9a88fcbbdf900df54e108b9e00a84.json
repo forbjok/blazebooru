@@ -1,0 +1,112 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT * FROM post WHERE hash = $1 AND NOT is_deleted;",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 2,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 3,
+        "name": "user_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 4,
+        "name": "title",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "source",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "filename",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 8,
+        "name": "size",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 9,
+        "name": "width",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 10,
+        "name": "height",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 11,
+        "name": "hash",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 12,
+        "name": "ext",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 13,
+        "name": "tn_ext",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 14,
+        "name": "tags",
+        "type_info": "TextArray"
+      },
+      {
+        "ordinal": 15,
+        "name": "is_deleted",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "9c9eb87646d415da01e0d80a81c6d333f4e9a88fcbbdf900df54e108b9e00a84"
+}

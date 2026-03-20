@@ -248,7 +248,9 @@ async fn upload_post(
         }
     }
 
-    if let (Some(info), Some((file, filename))) = (info, file) {
+    if let Some(info) = info
+        && let Some((file, filename)) = file
+    {
         let new_post = lm::NewPost {
             user_id: auth.claims.user_id,
             title: info.title.filter(|v| !v.is_empty()).map(|s| s.into()),

@@ -4,6 +4,7 @@ import { useRoute, useRouter } from "vue-router";
 
 import MainLayout from "@/components/MainLayout.vue";
 import PostComment from "@/components/comment/PostComment.vue";
+import Image from "@/components/common/Image.vue";
 import PostInfo from "@/components/post/PostInfo.vue";
 
 import { useAuthStore } from "@/stores/auth";
@@ -158,25 +159,45 @@ const { direction } = useSwipe(expandedImage, {
       <!-- Desktop -->
       <div class="layout desktop">
         <div class="layout-side">
-          <PostInfo v-if="post" :post="post" :can_edit_post="can_edit_post" :can_edit_tags="can_edit_tags"
-            @clickTag="clickTag" @delete="deletePost" @update="updatePost" />
+          <PostInfo
+            v-if="post"
+            :post="post"
+            :can_edit_post="can_edit_post"
+            :can_edit_tags="can_edit_tags"
+            @clickTag="clickTag"
+            @delete="deletePost"
+            @update="updatePost"
+          />
           <label>Comments</label>
           <div class="post-comments">
             <PostComment v-for="c in comments" :key="c.id" :comment="c" />
           </div>
           <form class="comment-form" @submit.prevent="postComment">
-            <textarea class="comment-field" name="comment" v-model="postStore.newComment" placeholder="Comment"
-              wrap="soft"></textarea>
+            <textarea
+              class="comment-field"
+              name="comment"
+              v-model="postStore.newComment"
+              placeholder="Comment"
+              wrap="soft"
+            ></textarea>
 
             <div class="form-buttons">
-              <input class="post-button" type="submit" value="Post comment" :disabled="!postStore.newComment" />
+              <input
+                class="post-button"
+                type="submit"
+                value="Post comment"
+                :disabled="!postStore.newComment"
+              />
             </div>
           </form>
         </div>
         <div class="layout-content">
-          <div class="image" @click.prevent="expand_image = !expand_image">
+          <div
+            class="image-container"
+            @click.prevent="expand_image = !expand_image"
+          >
             <a :href="file_url">
-              <img :src="file_url" alt="Image" />
+              <Image :src="file_url" alt="Image" />
             </a>
           </div>
         </div>
@@ -184,31 +205,57 @@ const { direction } = useSwipe(expandedImage, {
 
       <!-- Mobile -->
       <div class="layout mobile">
-        <div class="image" @click.prevent="expand_image = !expand_image">
+        <div
+          class="image-container"
+          @click.prevent="expand_image = !expand_image"
+        >
           <a :href="file_url">
-            <img :src="file_url" alt="Image" />
+            <Image :src="file_url" alt="Image" />
           </a>
         </div>
         <div class="post-info">
-          <PostInfo v-if="post" :post="post" :can_edit_post="can_edit_post" @clickTag="clickTag" @delete="deletePost"
-            @update="updatePost" />
+          <PostInfo
+            v-if="post"
+            :post="post"
+            :can_edit_post="can_edit_post"
+            @clickTag="clickTag"
+            @delete="deletePost"
+            @update="updatePost"
+          />
           <label>Comments</label>
           <div class="post-comments">
             <PostComment v-for="c in comments" :key="c.id" :comment="c" />
           </div>
           <form class="comment-form" @submit.prevent="postComment">
-            <textarea class="comment-field" name="comment" v-model="postStore.newComment" placeholder="Comment"
-              wrap="soft"></textarea>
+            <textarea
+              class="comment-field"
+              name="comment"
+              v-model="postStore.newComment"
+              placeholder="Comment"
+              wrap="soft"
+            ></textarea>
 
             <div class="form-buttons">
-              <input class="post-button" type="submit" value="Post comment" :disabled="!postStore.newComment" />
+              <input
+                class="post-button"
+                type="submit"
+                value="Post comment"
+                :disabled="!postStore.newComment"
+              />
             </div>
           </form>
         </div>
       </div>
-      <div ref="expandedImage" v-if="expand_image" class="expanded-image" @click.prevent="expand_image = false">
+
+      <!-- Expanded image -->
+      <div
+        ref="expandedImage"
+        v-if="expand_image"
+        class="expanded-image"
+        @click.prevent="expand_image = false"
+      >
         <a :href="file_url">
-          <img :src="file_url" alt="Image" />
+          <Image :src="file_url" alt="Image" />
         </a>
       </div>
     </MainLayout>
@@ -223,15 +270,12 @@ const { direction } = useSwipe(expandedImage, {
   gap: 0.4rem;
 }
 
-.image {
+.image-container {
+  background-color: var(--color-post-background);
+  padding: 0.2rem;
+
   a {
     display: block;
-  }
-
-  img {
-    background-color: var(--color-post-background);
-
-    padding: 0.2rem;
   }
 }
 
@@ -253,9 +297,7 @@ const { direction } = useSwipe(expandedImage, {
     display: block;
   }
 
-  img {
-    padding: 0;
-
+  .image {
     max-width: 100vw;
     max-height: 100vh;
   }
@@ -315,11 +357,9 @@ const { direction } = useSwipe(expandedImage, {
     padding-left: 1rem;
   }
 
-  .image {
-    img {
-      max-width: 90vw;
-      max-height: 92vh;
-    }
+  .image-container .image {
+    max-width: 90vw;
+    max-height: 92vh;
   }
 }
 
@@ -339,7 +379,7 @@ const { direction } = useSwipe(expandedImage, {
     overflow: hidden;
   }
 
-  .image img {
+  .image-container .image {
     max-width: 100vw;
     max-height: var(--max-content-height);
   }

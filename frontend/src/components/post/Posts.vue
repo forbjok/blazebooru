@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { toRefs } from "vue";
 
+import Image from "@/components/common/Image.vue";
+
 import type { Post } from "@/models/api/post";
 
 import { make_thumbnail_path } from "@/utils/path";
@@ -21,7 +23,7 @@ const { posts } = toRefs(props);
       :title="p.title"
       class="post"
     >
-      <img :src="make_thumbnail_path(p)" />
+      <Image :src="make_thumbnail_path(p)" />
     </router-link>
   </div>
 </template>
@@ -47,7 +49,7 @@ const { posts } = toRefs(props);
   max-width: 43vmin;
   max-height: 43vmin;
 
-  img {
+  .image {
     max-width: min(var(--thumbnail-size), 100%);
     max-height: min(var(--thumbnail-size), 100%);
   }

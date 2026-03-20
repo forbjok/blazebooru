@@ -1,10 +1,6 @@
 <script setup lang="ts">
 import MainLayout from "@/components/MainLayout.vue";
 import UploadProgress from "@/components/upload/UploadProgress.vue";
-
-import { useMainStore } from "@/stores/main";
-
-const mainStore = useMainStore();
 </script>
 
 <template>
