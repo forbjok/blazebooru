@@ -227,10 +227,11 @@ impl BlazeBooruCore {
         let thumbnail_path = self.public_thumbnail_path.join(thumbnail_filename);
 
         let mut tn_gen: Box<dyn ThumbnailGenerator> = match file_kind {
-            FileKind::Image => Box::new(StaticThumbnailGenerator::new(original_image_path)),
+            FileKind::Image => Box::new(StaticThumbnailGenerator::new(original_image_path, self.config.clone())),
             FileKind::AnimatedImage | FileKind::Video => Box::new(AnimatedThumbnailGenerator::new(
                 original_image_path,
                 ThumbnailQuality::Post,
+                self.config.clone(),
             )),
         };
 

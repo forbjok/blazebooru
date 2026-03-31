@@ -16,14 +16,16 @@ pub struct AnimatedThumbnailGenerator<'a> {
     source: &'a Path,
     quality: ThumbnailQuality,
     thumbnails: Vec<ThumbnailSpec<'a>>,
+    config: crate::config::BlazeBooruConfig,
 }
 
 impl<'a> AnimatedThumbnailGenerator<'a> {
-    pub fn new(source: &'a Path, quality: ThumbnailQuality) -> Self {
+    pub fn new(source: &'a Path, quality: ThumbnailQuality, config: crate::config::BlazeBooruConfig) -> Self {
         Self {
             source,
             quality,
             thumbnails: Vec::new(),
+            config,
         }
     }
 }
