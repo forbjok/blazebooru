@@ -11,24 +11,24 @@
     "preview": "rsbuild preview"
   },
   "dependencies": {
-    "@fortawesome/fontawesome-free": "^7.1.0",
-    "@fortawesome/free-solid-svg-icons": "^7.1.0",
-    "@vueuse/core": "^14.1.0",
-    "axios": "^1.13.2",
-    "date-fns": "^4.1.0",
-    "filesize": "^11.0.13",
+    "@fortawesome/fontawesome-free": "^7.2.0",
+    "@fortawesome/free-solid-svg-icons": "^7.2.0",
+    "@vueuse/core": "^14.3.0",
+    "axios": "^1.16.1",
+    "date-fns": "^4.4.0",
+    "filesize": "^11.0.17",
     "parsimmon": "^1.18.1",
     "pinia": "^3.0.4",
     "ress": "^5.0.2",
-    "sass": "^1.97.2",
-    "vue": "^3.5.26",
-    "vue-router": "^4.6.4"
+    "sass": "^1.100.0",
+    "vue": "^3.5.35",
+    "vue-router": "^5.1.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.3.11",
-    "@rsbuild/core": "^1.7.2",
-    "@rsbuild/plugin-sass": "^1.4.0",
-    "@rsbuild/plugin-vue": "^1.2.2",
-    "typescript": "^5.9.3"
+    "@biomejs/biome": "^2.4.16",
+    "@rsbuild/core": "^2.0.9",
+    "@rsbuild/plugin-sass": "^1.5.3",
+    "@rsbuild/plugin-vue": "^1.2.9",
+    "typescript": "^6.0.3"
   }
 }
