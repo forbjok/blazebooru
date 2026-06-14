@@ -22,6 +22,7 @@ pub struct BlazeBooruCore {
     pub public_path: PathBuf,
     pub public_original_path: PathBuf,
     pub public_thumbnail_path: PathBuf,
+    pub config: BlazeBooruConfig,
     store: PgStore,
 }
 
@@ -34,6 +35,7 @@ impl BlazeBooruCore {
             .expect("BLAZEBOORU_FILES_PATH not set");
 
         let temp_path = files_path.join("temp");
+        let _ = jxl_oxide::integration::register_image_decoding_hook();
 
         let public_path = files_path.join("public");
         let public_original_path = public_path.join("o");
@@ -50,12 +52,13 @@ impl BlazeBooruCore {
             .context("DATABASE_URL not set")?;
 
         let store = PgStore::new(&database_uri)?;
-
+        let blaze_conf = config.clone();
         Ok(Self {
             temp_path,
             public_path,
             public_original_path,
             public_thumbnail_path,
+            config: blaze_conf,
             store,
         })
     }

@@ -2,6 +2,8 @@ use std::{cmp, path::Path};
 
 use anyhow::Context;
 
+use crate::config::BlazeBooruConfig;
+
 use super::ThumbnailGenerator;
 
 #[derive(Debug)]
@@ -15,13 +17,15 @@ struct ThumbnailSpec<'a> {
 pub struct StaticThumbnailGenerator<'a> {
     source: &'a Path,
     thumbnails: Vec<ThumbnailSpec<'a>>,
+    config: BlazeBooruConfig,
 }
 
 impl<'a> StaticThumbnailGenerator<'a> {
-    pub fn new(source: &'a Path) -> Self {
+    pub fn new(source: &'a Path, config: BlazeBooruConfig) -> Self {
         Self {
             source,
             thumbnails: Vec::new(),
+            config, 
         }
     }
 }
@@ -41,7 +45,12 @@ impl<'a> ThumbnailGenerator<'a> for StaticThumbnailGenerator<'a> {
         }
 
         // Open image file
-        let img = image::open(self.source)?;
+        let mut limits = image::Limits::default();
+        limits.max_alloc = Some(self.config.max_decode_size as u64);
+        let mut reader = image::ImageReader::open(self.source)?;
+        reader.limits(limits);
+        let img = reader.decode()?;
+        //let img = image::open(self.source)?;
 
         let o_width = img.width();
         let o_height = img.height();
